@@ -1,16 +1,15 @@
 extern crate nalgebra;
 extern crate ncollide2d;
 extern crate nphysics2d;
-// extern crate ggez;
+extern crate ggez;
 
-use ggez;
 use ggez::event;
 use ggez::graphics;
 use ggez::nalgebra as na;
 
 use na::Vector2;
 use nphysics2d::world::{DefaultMechanicalWorld, DefaultGeometricalWorld};
-use nphysics2d::object::{DefaultBodySet, DefaultColliderSet, BodyStatus, RigidBodyDesc, RigidBody, DefaultBodyHandle};
+use nphysics2d::object::{DefaultBodySet, DefaultColliderSet, BodyStatus, RigidBodyDesc, DefaultBodyHandle};
 use nphysics2d::joint::DefaultJointConstraintSet;
 use nphysics2d::force_generator::DefaultForceGeneratorSet;
 
@@ -42,8 +41,7 @@ struct MainState {
     joint_constraints: DefaultJointConstraintSet<f32>,
     force_generators: DefaultForceGeneratorSet<f32>,
     gorilla: Gorilla,
-    hooks: [Hook; 5],
-    pos_x: f32,
+    hooks: [Hook; 5]
 }
 
 impl MainState {
@@ -51,9 +49,8 @@ impl MainState {
 
         let mut bodies = DefaultBodySet::new();
 
-        // add rigid body for gorilla
         let rigid_body_gorilla = RigidBodyDesc::new()
-            .translation(Vector2::new(0.0, -10.0))
+            .translation(Vector2::new(0.0, 10.0))
             .mass(500.0)
             .build();
         let gorilla = Gorilla{
@@ -76,8 +73,7 @@ impl MainState {
             joint_constraints: DefaultJointConstraintSet::new(),
             force_generators: DefaultForceGeneratorSet::new(),
             gorilla: gorilla,
-            hooks: hooks,
-            pos_x: 0.0 
+            hooks: hooks
         };
 
         Ok(s)
@@ -91,11 +87,7 @@ impl MainState {
             &mut self.joint_constraints,
             &mut self.force_generators
         );
-
-        self.pos_x = self.pos_x % 800.0 + 1.0;
     }
-
-
 }
 
 impl event::EventHandler for MainState {
@@ -107,13 +99,15 @@ impl event::EventHandler for MainState {
     fn draw(&mut self, ctx: &mut ggez::Context) -> ggez::GameResult {
         graphics::clear(ctx, [0.0, 0.0, 0.0, 1.0].into());
 
-        for hook in self.hooks.iter() {
+        let rigid_body = self.bodies.rigid_body(self.gorilla.body).expect("This rigid body does not exist.");
+        let position = rigid_body.position();
+        let translation = position.translation.vector;
 
-            // Get reference to the rigid body.
+        graphics::set_screen_coordinates(ctx, graphics::Rect::new(translation.x - 10.0, translation.y + 7.5, 20.0, -15.0))?;
+
+        for hook in self.hooks.iter() {
             let rigid_body = self.bodies.rigid_body(hook.body).expect("This rigid body does not exist.");
-            // Get the position (containing both translation and rotation).
             let position = rigid_body.position();
-            // Read the translation vector itself.
             let translation = position.translation.vector;
 
             let circle = graphics::Mesh::new_circle(
@@ -121,11 +115,22 @@ impl event::EventHandler for MainState {
                 graphics::DrawMode::fill(),
                 na::Point2::new(translation.x, translation.y),
                 0.1,
-                2.0,
+                0.01,
                 graphics::WHITE,
             )?;
-            graphics::draw(ctx, &circle, (na::Point2::new(0.0, 0.0),))?;
-        }
+            graphics::draw(ctx, &circle, graphics::DrawParam::default())?;
+
+        }        
+
+        let circle = graphics::Mesh::new_circle(
+            ctx,
+            graphics::DrawMode::fill(),
+            na::Point2::new(translation.x, translation.y),
+            0.5,
+            0.01,
+            [1.0, 0.0, 0.0, 1.0].into(),
+        )?;
+        graphics::draw(ctx, &circle, graphics::DrawParam::default())?;
 
         graphics::present(ctx)?;
         Ok(())
