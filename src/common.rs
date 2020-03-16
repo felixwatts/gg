@@ -7,7 +7,7 @@ pub struct ControlState {
     pub button_2_down: bool
 }
 
-pub const MAX_ROPE_LENGTH: f32 = 5.0;
+pub const MAX_ROPE_LENGTH: f32 = 10.0;
 
 pub fn body_to_location(body: DefaultBodyHandle, world: &PhysicalWorld) -> na::Vector2<f32> {
     let rigid_body = world.bodies.rigid_body(body).expect("body not found");

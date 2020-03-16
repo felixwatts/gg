@@ -23,14 +23,14 @@ pub trait Entity {
 
     fn draw_param(&self, world: &PhysicalWorld) -> Option<graphics::DrawParam> {
         let radius = self.radius();
-        let location = self.location(world) - na::Vector2::new(radius, radius);
+        let location = self.location(world);
         let orientation = self.orientation(world);
         let color = self.color();
         let scale = Vector2::new(radius * 2.0, radius * 2.0);
     
-        let result = graphics::DrawParam::new()
-            //.offset([0.5, 0.5]) apparently not needed, I'm not sure why
-            .dest([location.x, location.y])
+        let result = graphics::DrawParam::new()    
+            .offset([0.5, 0.5])        
+            .dest([location.x, location.y])            
             .rotation(orientation)
             .scale(scale)
             .color(color);
