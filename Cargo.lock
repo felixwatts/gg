@@ -637,6 +637,7 @@ name = "gg"
 version = "0.1.0"
 dependencies = [
  "ggez",
+ "mint",
  "nalgebra",
  "ncollide2d",
  "nphysics2d",
