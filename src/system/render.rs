@@ -1,3 +1,4 @@
+use crate::component::physics::Physical;
 use recs::{Ecs, EntityId};
 use crate::component::render::Renderable;
 use crate::component::render::Focus;
@@ -18,12 +19,17 @@ impl<'a> Render {
         })
     }
 
-    pub fn step(&mut self, ecs: &Ecs, context: &mut Context) -> ggez::GameResult {
-
-        graphics::clear(context, [0.0, 0.0, 0.0, 1.0].into());
-
+    pub fn step(&mut self, ecs: &mut Ecs, context: &mut Context) -> ggez::GameResult {
+        self.copy_physical_to_drawparam(ecs)?;
         self.set_focus(ecs, context)?;
+        graphics::clear(context, [0.0, 0.0, 0.0, 1.0].into());
+        self.draw_sprites(ecs, context)?;
+        graphics::present(context)?;
 
+        Ok(())
+    }
+
+    fn draw_sprites(&mut self, ecs: &Ecs, context: &mut Context) -> GameResult {
         self.sprite_batch.clear();
 
         let mut ids: Vec<EntityId> = Vec::new();
@@ -36,7 +42,22 @@ impl<'a> Render {
 
         graphics::draw(context, &self.sprite_batch, graphics::DrawParam::default())?;
 
-        graphics::present(context)?;
+        Ok(())
+    }
+
+    fn copy_physical_to_drawparam(&mut self, ecs: &mut recs::Ecs) -> GameResult {
+        let mut physical_renderable_entities = vec![];
+        ecs.collect_with(&component_filter!(Physical, Renderable), &mut physical_renderable_entities);
+        for &entity in physical_renderable_entities.iter() {
+            let physical : Physical = ecs.get(entity).unwrap(); // TODO handle not found
+            let renderable : &mut Renderable = ecs.borrow_mut(entity).unwrap(); // TODO handle not found
+
+            renderable.0.rotation = physical.orientation;
+            renderable.0.dest.x = physical.location.x;
+            renderable.0.dest.y = physical.location.y;
+
+            println!("{},{}", renderable.0.dest.x, renderable.0.dest.y);
+        };
 
         Ok(())
     }
@@ -46,13 +67,13 @@ impl<'a> Render {
         ecs.collect_with(&component_filter!(Focus), &mut focus_entities);
         if let Some(&focus_entity) = focus_entities.first() {
             if let Ok(physical_component) = ecs.borrow::<crate::component::physics::Physical>(focus_entity) {
-                let x_min = physical_component.location.x - 10.0;
-                let y_min = physical_component.location.y + 7.5;
+                let x_min = physical_component.location.x - 30.0;
+                let y_min = physical_component.location.y + 22.5;
                 let screen_rect = graphics::Rect::new(
                     x_min,
                     y_min,
-                    20.0, 
-                    -15.0
+                    60.0, 
+                    -45.0
                 );
                 return graphics::set_screen_coordinates(
                     context, 

@@ -2,6 +2,7 @@ mod system;
 mod component;
 mod engine;
 mod environment;
+mod entity;
 
 extern crate nalgebra;
 extern crate ncollide2d;
