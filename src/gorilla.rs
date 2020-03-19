@@ -101,7 +101,7 @@ pub struct Gorilla {
 impl Gorilla {
     pub fn new(world: &mut PhysicalWorld) -> Gorilla {
         let body = RigidBodyDesc::new()
-            .translation(Vector2::new(0.0, 10.0))
+            .translation(Vector2::new(1.0, 10.0))
             .mass(500.0)
             .build();
         let body_handle = world.bodies.insert(body);

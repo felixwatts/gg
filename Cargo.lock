@@ -641,6 +641,7 @@ dependencies = [
  "nalgebra",
  "ncollide2d",
  "nphysics2d",
+ "recs",
 ]
 
 [[package]]
@@ -1134,11 +1135,11 @@ dependencies = [
 
 [[package]]
 name = "memoffset"
-version = "0.5.3"
+version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75189eb85871ea5c2e2c15abbdd541185f63b408415e5051f5cac122d8c774b9"
+checksum = "b4fc2c02a7e374099d4ee95a193111f72d2110197fe200272371758f6c3643d8"
 dependencies = [
- "rustc_version",
+ "autocfg 1.0.0",
 ]
 
 [[package]]
@@ -1697,6 +1698,11 @@ checksum = "678054eb77286b51581ba43620cc911abf02758c91f93f479767aed0f90458b2"
 dependencies = [
  "rand_core 0.3.1",
 ]
+
+[[package]]
+name = "recs"
+version = "2.0.1"
+source = "git+https://github.com/felixwatts/rustic-ecs#f4b7203c355d956be693d45285b10de4281aa9d5"
 
 [[package]]
 name = "redox_syscall"

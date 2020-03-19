@@ -12,3 +12,4 @@ ncollide2d = "0.20"
 nphysics2d = "0.12"
 ggez = "*"
 mint = "*"
+recs = { git = "https://github.com/felixwatts/rustic-ecs" }
