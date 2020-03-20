@@ -1,3 +1,4 @@
+use crate::component::lifecycle::Dead;
 use recs::Ecs;
 use crate::component::lifecycle::Owns;
 
@@ -10,7 +11,7 @@ impl Teardown{
 
     pub fn step(&mut self, ecs: &mut Ecs, physics_system: &mut crate::system::physics::Physics) -> ggez::GameResult {
         let mut dead_entities = vec![];
-        let filter = component_filter!(crate::component::lifecycle::Teardown);
+        let filter = component_filter!(Dead);
         ecs.collect_with(&filter, &mut dead_entities);
         for &entity in dead_entities.iter() {
             self.teardown_entity(ecs, physics_system, entity)?;

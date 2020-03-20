@@ -50,7 +50,7 @@ impl Physics {
 
     pub fn teardown_entity(&mut self, ecs: &mut recs::Ecs, entity: recs::EntityId) -> ggez::GameResult {
         if let Ok(revolute_joint) = ecs.borrow::<RevoluteJoint>(entity) {
-            self.bodies.remove(revolute_joint.0);
+            self.joint_constraints.remove(revolute_joint.0);
         }
 
         if let Ok(collider) = ecs.borrow::<Collider>(entity) {
@@ -101,7 +101,7 @@ impl Physics {
         for &entity in ids.iter() {
             let param: InitRevoluteJoint = ecs.get(entity).unwrap();
             if let Ok(body1) = ecs.get::<Body>(param.end1) {
-                if let Ok(body2) = ecs.get::<Body>(param.end1) {
+                if let Ok(body2) = ecs.get::<Body>(param.end2) {
 
                     let revolute_constraint = RevoluteConstraint::new(
                         BodyPartHandle(body1.0, 0),
@@ -111,8 +111,8 @@ impl Physics {
                     );
             
                     let joint_handle = self.joint_constraints.insert(revolute_constraint);
-                    ecs.unset::<InitRevoluteJoint>(entity).unwrap(); // todo better error handling
-                    ecs.set(entity, RevoluteJoint(joint_handle)).unwrap(); // todo better error handling
+                    ecs.unset::<InitRevoluteJoint>(entity).unwrap();
+                    ecs.set(entity, RevoluteJoint(joint_handle)).unwrap();
                 }
             }            
         }
@@ -126,10 +126,9 @@ impl Physics {
         for &entity in ids.iter() {
             let body_component: Body = ecs.get(entity).unwrap();
             let physical_component: &mut Physical = ecs.borrow_mut(entity).unwrap();
-            let rigid_body = self.bodies.rigid_body(body_component.0).expect("rigid body not found");
+            let rigid_body = self.bodies.rigid_body(body_component.0).unwrap();
             let pos = rigid_body.position();
             let loc = pos.translation.vector;
-            println!("{},{}", loc.x, loc.y);
             physical_component.location = [loc.x, loc.y].into();
             physical_component.orientation = pos.rotation.angle();
         };

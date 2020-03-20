@@ -1,6 +1,7 @@
 pub mod anchor;
 pub mod gorilla;
 
+use crate::component::lifecycle::Owns;
 use crate::component::physics::Overlapping;
 use crate::component::physics::InitCollider;
 use crate::component::render::Renderable;
@@ -49,6 +50,12 @@ fn with_sprite(ecs: &mut recs::Ecs, entity: recs::EntityId, radius: f32, color: 
 
 fn with_overlapping(ecs: &mut recs::Ecs, entity: recs::EntityId) -> GameResult {
     ecs.set(entity, Overlapping(vec![])).unwrap();
+
+    Ok(())
+}
+
+fn with_owns(ecs: &mut recs::Ecs, entity: recs::EntityId) -> GameResult {
+    ecs.set(entity, Owns(vec![])).unwrap();
 
     Ok(())
 }

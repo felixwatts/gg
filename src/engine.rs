@@ -8,13 +8,15 @@ pub struct Engine {
     ecs: recs::Ecs,
     render_system: crate::system::render::Render,
     physics_system: crate::system::physics::Physics,
-    teardown_system: crate::system::teardown::Teardown
+    teardown_system: crate::system::teardown::Teardown,
+    gorilla_system: crate::system::gorilla::GorillaSystem
 }
 
 impl EventHandler for Engine {
-    fn update(&mut self, _ctx: &mut Context) -> ggez::GameResult {
+    fn update(&mut self, context: &mut Context) -> ggez::GameResult {
 
         self.physics_system.step(&mut self.ecs)?;
+        self.gorilla_system.step(&mut self.ecs, context)?;
         self.teardown_system.step(&mut self.ecs, &mut self.physics_system)?;
 
         Ok(())
@@ -34,6 +36,7 @@ impl Engine {
             render_system: crate::system::render::Render::new(context)?,
             physics_system: crate::system::physics::Physics::new(),
             teardown_system: crate::system::teardown::Teardown::new(),
+            gorilla_system: crate::system::gorilla::GorillaSystem::new()
         };
 
         spawn_anchor(&mut engine.ecs, [-5.0, -5.0].into())?;

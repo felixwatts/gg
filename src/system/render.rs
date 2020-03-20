@@ -55,8 +55,6 @@ impl<'a> Render {
             renderable.0.rotation = physical.orientation;
             renderable.0.dest.x = physical.location.x;
             renderable.0.dest.y = physical.location.y;
-
-            println!("{},{}", renderable.0.dest.x, renderable.0.dest.y);
         };
 
         Ok(())
