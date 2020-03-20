@@ -1,33 +1,76 @@
-use crate::component::physics::Physical;
-use crate::component::lifecycle::Owns;
-use crate::component::physics::InitRevoluteJoint;
-use crate::component::physics::Overlapping;
+use ggez::Context;
+use crate::system::system::System;
+use nalgebra::Vector2;
+use crate::component::Focus;
+use crate::entity::*;
+use crate::component::InitRevoluteJoint;
+use crate::component::Overlapping;
+use crate::component::Dead;
+use crate::component::Sprite;
+use crate::component::Owns;
+use crate::component::Gorilla;
 use ggez::GameResult;
-use crate::component::lifecycle::Dead;
 use recs::EntityId;
 use recs::Ecs;
 use ggez::input::keyboard::KeyCode;
-use crate::component::gorilla::Gorilla;
+use nphysics2d::object::BodyStatus;
 
 pub struct GorillaSystem {
 }
 
-impl GorillaSystem {
-    pub fn new() -> GorillaSystem {
-        GorillaSystem {
-        }
+pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GameResult<EntityId> {
+    let gorilla = ecs.create_entity();
+
+    with_body(ecs, gorilla, loc, BodyStatus::Dynamic)?;
+    with_sensor(ecs, gorilla, 1.0)?;
+    with_collider(ecs, gorilla, 0.15)?;
+    with_overlapping(ecs, gorilla)?;
+    with_sprite(ecs, gorilla, [1.0, 0.0, 0.0, 1.0], [0.3, 0.3].into())?;
+    ecs.set(gorilla, Focus).unwrap();
+    ecs.set(gorilla, Owns(vec![])).unwrap();
+    ecs.set(gorilla, Gorilla{rope: None}).unwrap();
+
+    Ok(gorilla)
+}
+
+pub fn spawn_rope(ecs: &mut recs::Ecs, from_entity: EntityId, to_entity: EntityId) -> GameResult<EntityId> {
+    let rope = ecs.create_entity();
+
+    let p1 = ecs.borrow::<Sprite>(from_entity).unwrap().location;
+    let p2 = ecs.borrow::<Sprite>(to_entity).unwrap().location;
+    let offset = p2 - p1;
+
+    ecs.set(rope, InitRevoluteJoint{
+        end1: from_entity,
+        end2: to_entity,
+        anchor1: offset.into(),
+        anchor2: nalgebra::Point2::new(0.0, 0.0)
+    }).unwrap();
+    crate::entity::with_sprite(ecs, rope, [0.0, 1.0, 1.0, 1.0].into(), [0.1, 0.0].into())?;
+
+    if let Ok(owns) = ecs.borrow_mut::<Owns>(from_entity) {
+        owns.0.push(rope);
+    }
+    if let Ok(owns) = ecs.borrow_mut::<Owns>(to_entity) {
+        owns.0.push(rope);
     }
 
-    pub fn step(
-        &mut self, 
-        ecs: &mut Ecs, 
-        context: &ggez::Context) -> ggez::GameResult {
+    Ok(rope)
+}
+
+impl System for GorillaSystem {
+    fn init(&mut self, ecs: &mut Ecs, _: &Context) -> GameResult {
+        spawn_gorilla(ecs, [-0.95, 2.0].into())?;
+        Ok(())
+    }
+
+    fn update(&mut self, ecs: &mut Ecs, context: &Context) -> GameResult {
         let mut ids: Vec<EntityId> = Vec::new();
-        let filter = component_filter!(Gorilla, Owns, Physical);
+        let filter = component_filter!(Gorilla, Owns, Sprite);
         ecs.collect_with(&filter, &mut ids);
         for &entity in ids.iter() {
 
-            if ecs.get::<Physical>(entity).unwrap().location.y < -10.0 {
+            if ecs.borrow::<Sprite>(entity).unwrap().location.y < -10.0 {
                 ecs.set(entity, Dead).unwrap();
             }
 
@@ -40,12 +83,19 @@ impl GorillaSystem {
         }
         Ok(())
     }
-
-    pub fn teardown_entity(&mut self, ecs: &mut Ecs, entity: EntityId) ->  GameResult {
-        if let Ok(_) = ecs.get::<Gorilla>(entity) {
-            crate::entity::gorilla::spawn_gorilla(ecs, [-2.5, 10.0].into())?;
+    
+    fn teardown_entity(&mut self, entity: EntityId, ecs: &mut Ecs) -> GameResult {
+        if let Ok(&_) = ecs.borrow::<Gorilla>(entity) {
+            spawn_gorilla(ecs, [-0.5, 2.0].into())?;
         }
         Ok(())
+    }
+}
+
+impl GorillaSystem {
+    pub fn new() -> GorillaSystem {
+        GorillaSystem {
+        }
     }
 
     fn try_add_rope(
@@ -56,23 +106,8 @@ impl GorillaSystem {
         if let None = gorilla.rope {
             let overlapping: &Overlapping = ecs.borrow(entity).unwrap();
             if let Some(&closest_anchor) = overlapping.0.first() {
-
-                let p1 = ecs.get::<Physical>(entity).unwrap().location;
-                let p2 = ecs.get::<Physical>(closest_anchor).unwrap().location;
-                let offset = p2 - p1;
-
-                let rope = ecs.create_entity();
-                ecs.set(rope, InitRevoluteJoint{
-                    end1: closest_anchor,
-                    end2: entity,
-                    anchor1: nalgebra::Point2::new(0.0, 0.0),
-                    anchor2: offset.into(),
-                }).unwrap();
-                crate::entity::with_physical(ecs, rope, [0.1, 0.0].into())?;
-                crate::entity::with_sprite(ecs, rope, [0.0, 1.0, 1.0, 1.0].into())?;
+                let rope = spawn_rope(ecs, entity, closest_anchor)?;
                 ecs.set(entity, Gorilla{ rope: Some(rope) }).unwrap();
-                let owns : &mut Owns = ecs.borrow_mut(entity).unwrap();
-                owns.0.push(rope);
             };
         }
         

@@ -1,26 +1,19 @@
-use crate::component::physics::Physical;
+use crate::component::Focus;
+use crate::component::Sprite;
+use ggez::graphics::DrawParam;
+use crate::system::system::System;
 use recs::{Ecs, EntityId};
-use crate::component::render::Renderable;
-use crate::component::render::Focus;
 use ggez::graphics::spritebatch::SpriteBatch;
 use ggez::Context;
 use ggez::GameResult;
 use ggez::graphics;
 
-pub struct Render {
+pub struct RenderSystem {
     sprite_batch: SpriteBatch,
 }
 
-impl<'a> Render {
-    pub fn new(context: &mut Context) -> GameResult<Render> {
-        let gfx = ggez::graphics::Image::new(context, "/1px.png")?;
-        Ok(Render {
-            sprite_batch: SpriteBatch::new(gfx)
-        })
-    }
-
-    pub fn step(&mut self, ecs: &mut Ecs, context: &mut Context) -> ggez::GameResult {
-        self.copy_physical_to_drawparam(ecs)?;
+impl System for RenderSystem {
+    fn draw(&mut self, ecs: &Ecs, context: &mut Context) -> GameResult {
         self.set_focus(ecs, context)?;
         graphics::clear(context, [0.0, 0.0, 0.0, 1.0].into());
         self.draw_sprites(ecs, context)?;
@@ -28,36 +21,38 @@ impl<'a> Render {
 
         Ok(())
     }
+}
+
+fn entity_to_draw_param(entity: EntityId, ecs: &Ecs) -> DrawParam {
+    let sprite : &Sprite = ecs.borrow(entity).unwrap();
+    DrawParam::new()
+        .offset([0.5, 0.5])
+        .color(sprite.color.into())
+        .scale(sprite.size)
+        .rotation(sprite.orientation)
+        .dest([sprite.location.x, sprite.location.y])
+}
+
+impl RenderSystem {
+    pub fn new(context: &mut Context) -> GameResult<RenderSystem> {
+        let gfx = ggez::graphics::Image::new(context, "/1px.png")?;
+        Ok(RenderSystem {
+            sprite_batch: SpriteBatch::new(gfx)
+        })
+    }
 
     fn draw_sprites(&mut self, ecs: &Ecs, context: &mut Context) -> GameResult {
         self.sprite_batch.clear();
 
-        let mut ids: Vec<EntityId> = Vec::new();
-        let filter = component_filter!(Renderable);
-        ecs.collect_with(&filter, &mut ids);
-        for id in ids {
-            let component = ecs.borrow::<Renderable>(id).unwrap();
-            self.sprite_batch.add(component.0);
-        };
+        let mut sprite_entities = vec![];
+        ecs.collect_with(&component_filter!(Sprite), &mut sprite_entities);
+
+        let draw_params = sprite_entities.iter().map(|&entity| entity_to_draw_param(entity, ecs));
+        for draw_param in draw_params {
+            self.sprite_batch.add(draw_param);
+        }
 
         graphics::draw(context, &self.sprite_batch, graphics::DrawParam::default())?;
-
-        Ok(())
-    }
-
-    fn copy_physical_to_drawparam(&mut self, ecs: &mut recs::Ecs) -> GameResult {
-        let mut physical_renderable_entities = vec![];
-        ecs.collect_with(&component_filter!(Physical, Renderable), &mut physical_renderable_entities);
-        for &entity in physical_renderable_entities.iter() {
-            let physical : Physical = ecs.get(entity).unwrap(); // TODO handle not found
-            let renderable : &mut Renderable = ecs.borrow_mut(entity).unwrap(); // TODO handle not found
-
-            renderable.0.rotation = physical.orientation;
-            renderable.0.dest.x = physical.location.x;
-            renderable.0.dest.y = physical.location.y;
-            renderable.0.scale.x = physical.size.x;
-            renderable.0.scale.y = physical.size.y;
-        };
 
         Ok(())
     }
@@ -66,14 +61,14 @@ impl<'a> Render {
         let mut focus_entities = vec![];
         ecs.collect_with(&component_filter!(Focus), &mut focus_entities);
         if let Some(&focus_entity) = focus_entities.first() {
-            if let Ok(physical_component) = ecs.borrow::<crate::component::physics::Physical>(focus_entity) {
-                let x_min = physical_component.location.x - 30.0;
-                let y_min = physical_component.location.y + 22.5;
+            if let Ok(sprite) = ecs.borrow::<Sprite>(focus_entity) {
+                let x_min = sprite.location.x - 6.0;
+                let y_min = sprite.location.y + 4.5;
                 let screen_rect = graphics::Rect::new(
                     x_min,
                     y_min,
-                    60.0, 
-                    -45.0
+                    12.0, 
+                    -9.0
                 );
                 return graphics::set_screen_coordinates(
                     context, 
