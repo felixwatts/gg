@@ -11,7 +11,8 @@ pub struct InitBody(pub RigidBodyDesc::<f32>);
 #[derive(Clone)]
 pub struct Physical {
     pub location: Vector2<f32>,
-    pub orientation: f32
+    pub orientation: f32,
+    pub size: Vector2<f32>
 }
 
 #[derive(Clone)]
@@ -25,6 +26,7 @@ pub struct InitRevoluteJoint {
     pub anchor2: Point2<f32>
 }
 
+#[derive(Clone)]
 pub struct RevoluteJoint(pub DefaultJointConstraintHandle);
 
 pub struct InitCollider(pub ColliderDesc::<f32>);

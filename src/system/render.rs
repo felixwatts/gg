@@ -55,6 +55,8 @@ impl<'a> Render {
             renderable.0.rotation = physical.orientation;
             renderable.0.dest.x = physical.location.x;
             renderable.0.dest.y = physical.location.y;
+            renderable.0.scale.x = physical.size.x;
+            renderable.0.scale.y = physical.size.y;
         };
 
         Ok(())

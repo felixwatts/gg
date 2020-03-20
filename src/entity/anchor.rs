@@ -7,9 +7,9 @@ pub fn spawn_anchor(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GameResult {
     let root = ecs.create_entity();
     
     with_body(ecs, root, loc, BodyStatus::Static)?;
-    with_physical(ecs, root)?;
+    with_physical(ecs, root, [0.2, 0.2].into())?;
     with_sensor(ecs, root, 0.1)?;
-    with_sprite(ecs, root, 0.1, [1.0, 1.0, 1.0, 1.0])?;
+    with_sprite(ecs, root, [1.0, 1.0, 1.0, 1.0])?;
 
     Ok(())
 }

@@ -42,7 +42,7 @@ impl GorillaSystem {
     }
 
     pub fn teardown_entity(&mut self, ecs: &mut Ecs, entity: EntityId) ->  GameResult {
-        if let Ok(gorilla) = ecs.get::<Gorilla>(entity) {
+        if let Ok(_) = ecs.get::<Gorilla>(entity) {
             crate::entity::gorilla::spawn_gorilla(ecs, [-2.5, 10.0].into())?;
         }
         Ok(())
@@ -68,6 +68,8 @@ impl GorillaSystem {
                     anchor1: nalgebra::Point2::new(0.0, 0.0),
                     anchor2: offset.into(),
                 }).unwrap();
+                crate::entity::with_physical(ecs, rope, [0.1, 0.0].into())?;
+                crate::entity::with_sprite(ecs, rope, [0.0, 1.0, 1.0, 1.0].into())?;
                 ecs.set(entity, Gorilla{ rope: Some(rope) }).unwrap();
                 let owns : &mut Owns = ecs.borrow_mut(entity).unwrap();
                 owns.0.push(rope);

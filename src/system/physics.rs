@@ -43,6 +43,7 @@ impl Physics {
         );
 
         self.refresh_bodies(ecs)?;
+        self.refresh_joints(ecs)?;
         self.refresh_overlapping(ecs)?;
 
         Ok(())
@@ -50,6 +51,7 @@ impl Physics {
 
     pub fn teardown_entity(&mut self, ecs: &mut recs::Ecs, entity: recs::EntityId) -> ggez::GameResult {
         if let Ok(revolute_joint) = ecs.borrow::<RevoluteJoint>(entity) {
+            println!("remove joint");
             self.joint_constraints.remove(revolute_joint.0);
         }
 
@@ -58,6 +60,7 @@ impl Physics {
         }
 
         if let Ok(body) = ecs.borrow::<Body>(entity) {
+            println!("remove body");
             self.bodies.remove(body.0);
         }
 
@@ -71,6 +74,7 @@ impl Physics {
         for &entity in ids.iter() {
             let param: &InitBody = ecs.borrow(entity).unwrap();
             let body = param.0.build();
+            println!("add body");
             let body_handle = self.bodies.insert(body);
             ecs.unset::<InitBody>(entity).unwrap(); // todo better error handling
             ecs.set(entity, Body(body_handle)).unwrap(); // todo better error handling
@@ -110,6 +114,7 @@ impl Physics {
                         param.anchor2,
                     );
             
+                    println!("add joint");
                     let joint_handle = self.joint_constraints.insert(revolute_constraint);
                     ecs.unset::<InitRevoluteJoint>(entity).unwrap();
                     ecs.set(entity, RevoluteJoint(joint_handle)).unwrap();
@@ -131,6 +136,38 @@ impl Physics {
             let loc = pos.translation.vector;
             physical_component.location = [loc.x, loc.y].into();
             physical_component.orientation = pos.rotation.angle();
+        };
+
+        Ok(())
+    }
+
+    fn refresh_joints(&mut self, ecs: &mut Ecs) -> ggez::GameResult {
+        let mut ids: Vec<EntityId> = Vec::new();
+        let filter = component_filter!(RevoluteJoint, Physical);
+        ecs.collect_with(&filter, &mut ids);
+        for &entity in ids.iter() {
+            let joint_component: RevoluteJoint = ecs.get(entity).unwrap();
+            let physical_component: &mut Physical = ecs.borrow_mut(entity).unwrap();
+            let (anchor1, anchor2) = self.joint_constraints.get(joint_component.0).unwrap().anchors();
+            let body1 = self.bodies.rigid_body(anchor1.0).unwrap();
+            let body2 = self.bodies.rigid_body(anchor2.0).unwrap();
+            let pos1 = body1.position().translation.vector;
+            let pos2 = body2.position().translation.vector;
+            let offset = pos2 - pos1;
+
+            // not sure why this is necessary, probably something to do with
+            // Matrix::angle giving smallest angle, not clockwise angle
+            let orientation = if offset.x < 0.0 {
+                nalgebra::Matrix::angle(&Vector2::y(), &offset)
+            } else {
+                nalgebra::Matrix::angle(&-Vector2::y(), &offset)
+            };
+
+            let length = offset.norm();
+
+            physical_component.location = pos1 + (offset / 2.0);
+            physical_component.orientation = orientation;
+            physical_component.size.y = length;
         };
 
         Ok(())

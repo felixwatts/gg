@@ -10,10 +10,10 @@ pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GameResult<Entit
     let root = ecs.create_entity();
 
     with_body(ecs, root, loc, BodyStatus::Dynamic)?;
-    with_physical(ecs, root)?;
+    with_physical(ecs, root, [2.0, 2.0].into())?;
     with_sensor(ecs, root, 5.0)?;
     with_overlapping(ecs, root)?;
-    with_sprite(ecs, root, 1.0, [1.0, 0.0, 0.0, 1.0])?;
+    with_sprite(ecs, root, [1.0, 0.0, 0.0, 1.0])?;
     ecs.set(root, Focus).unwrap();
     ecs.set(root, Owns(vec![])).unwrap();
     ecs.set(root, Gorilla{rope: None}).unwrap();
