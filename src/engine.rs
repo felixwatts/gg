@@ -17,7 +17,7 @@ impl EventHandler for Engine {
 
         self.physics_system.step(&mut self.ecs)?;
         self.gorilla_system.step(&mut self.ecs, context)?;
-        self.teardown_system.step(&mut self.ecs, &mut self.physics_system)?;
+        self.teardown_system.step(&mut self.ecs, &mut self.physics_system, &mut self.gorilla_system)?;
 
         Ok(())
     }

@@ -23,15 +23,27 @@ impl GorillaSystem {
         ecs: &mut Ecs, 
         context: &ggez::Context) -> ggez::GameResult {
         let mut ids: Vec<EntityId> = Vec::new();
-        let filter = component_filter!(Gorilla, Owns);
+        let filter = component_filter!(Gorilla, Owns, Physical);
         ecs.collect_with(&filter, &mut ids);
         for &entity in ids.iter() {
+
+            if ecs.get::<Physical>(entity).unwrap().location.y < -10.0 {
+                ecs.set(entity, Dead).unwrap();
+            }
+
             if ggez::input::keyboard::is_key_pressed(context, KeyCode::Space) {
                 self.try_add_rope(ecs, entity)?;
             } else {
                 self.try_remove_rope(ecs, entity)?;
             }
 
+        }
+        Ok(())
+    }
+
+    pub fn teardown_entity(&mut self, ecs: &mut Ecs, entity: EntityId) ->  GameResult {
+        if let Ok(gorilla) = ecs.get::<Gorilla>(entity) {
+            crate::entity::gorilla::spawn_gorilla(ecs, [-2.5, 10.0].into())?;
         }
         Ok(())
     }

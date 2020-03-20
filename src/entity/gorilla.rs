@@ -1,3 +1,4 @@
+use recs::EntityId;
 use crate::component::gorilla::Gorilla;
 use crate::component::render::Focus;
 use nalgebra::Vector2;
@@ -5,7 +6,7 @@ use ggez::GameResult;
 use nphysics2d::object::BodyStatus;
 use crate::entity::*;
 
-pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GameResult {
+pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GameResult<EntityId> {
     let root = ecs.create_entity();
 
     with_body(ecs, root, loc, BodyStatus::Dynamic)?;
@@ -17,5 +18,5 @@ pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GameResult {
     ecs.set(root, Owns(vec![])).unwrap();
     ecs.set(root, Gorilla{rope: None}).unwrap();
 
-    Ok(())
+    Ok(root)
 }
