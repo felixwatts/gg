@@ -47,25 +47,6 @@ impl RadialBody {
             accel
         }
     }
-
-    // pub fn to_planar(&self, ecs: &Ecs) -> RadialBody {
-    //     let origin_loc_vel : RadialBody = ecs.get(self.origin).unwrap();
-
-    //     let dx = self.radius * self.loc.sin();
-    //     let dy = self.radius * self.loc.cos();
-
-    //     let radius = nalgebra::Vector2::new(dx, dy);
-
-    //     let loc_planar = origin_loc_vel.loc + radius;
-
-    //     let tangent = nalgebra::Vector2::new(dy, dx);
-    //     let vel_planar = tangent * self.vel;
-
-    //     RadialBody {
-    //         loc: loc_planar,
-    //         vel: vel_planar
-    //     }
-    // }
 }
 
 #[test]

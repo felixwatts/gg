@@ -38,85 +38,42 @@ impl PlanarBody {
 }
 
 #[test]
-fn test_update_applies_vel_to_pos() {
-    let loc = Vector2::<f32>::zeros();
-    let vel = Vector2::new(3.0, -2.0);
-    let accel = Vector2::zeros();
-    let time = 1.0;
+fn test_update() {
+    // if no vel or accel then no change
+    expect_update(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0);
 
-    let mut subject = PlanarBody{
-        loc,
-        vel,
-        accel
-    };
+    // if vel and no accel then linear change in loc and no change in vel
+    expect_update(0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0);
+    expect_update(0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.5, 0.5, 1.0, 1.0, 0.5);
+    expect_update(0.0, 0.0, -1.0, -1.0, 0.0, 0.0, -1.0, -1.0, -1.0, -1.0, 1.0);
 
-    subject.update(time);
+    // accel leads to change in vel and loc
+    expect_update(0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.5, 0.5, 1.0, 1.0, 1.0);
+    
+    // negative accel lead to negative vel and loc
+    expect_update(0.0, 0.0, 0.0, 0.0, -1.0, -1.0, -0.5, -0.5, -1.0, -1.0, 1.0);
 
-    assert_eq!(3.0, subject.loc.x);
-    assert_eq!(-2.0, subject.loc.y);
-    assert_eq!(3.0, subject.vel.x);
-    assert_eq!(-2.0, subject.vel.y);
+    // accel is added to velocity
+    expect_update(0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.5, 1.5, 2.0, 2.0, 1.0);
+
+    // accel and vel applied linearly with time
+    expect_update(0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.125, 0.125, 0.5, 0.5, 0.5);
 }
 
-#[test]
-fn test_update_applies_vel_to_pos_for_time() {
-    let loc = Vector2::<f32>::zeros();
-    let vel = Vector2::new(3.0, -2.0);
-    let accel = Vector2::zeros();
-    let time = 0.5;
-
+#[cfg(test)]
+fn expect_update(loc_x: f32, loc_y: f32, vel_x: f32, vel_y: f32, a_x: f32, a_y: f32, 
+    exp_loc_x: f32, exp_loc_y: f32, exp_vel_x: f32, exp_vel_y: f32, t: f32) {
     let mut subject = PlanarBody{
-        loc,
-        vel,
-        accel
+        loc: Vector2::new(loc_x, loc_y),
+        vel: Vector2::new(vel_x, vel_y),
+        accel: Vector2::new(a_x, a_y)
     };
 
-    subject.update(time);
+    subject.update(t);
 
-    assert_eq!(1.5, subject.loc.x);
-    assert_eq!(-1.0, subject.loc.y);
-    assert_eq!(3.0, subject.vel.x);
-    assert_eq!(-2.0, subject.vel.y);
-}
-
-#[test]
-fn test_update_applies_accel_to_vel() {
-    let loc = Vector2::<f32>::zeros();
-    let vel = Vector2::new(3.0, -2.0);
-    let accel = Vector2::new(0.0, -5.0);
-    let time = 1.0;
-
-    let mut subject = PlanarBody{
-        loc,
-        vel,
-        accel
-    };
-
-    subject.update(time);
-
-    assert_eq!(3.0, subject.loc.x);
-    assert_eq!(-4.5, subject.loc.y);
-    assert_eq!(3.0, subject.vel.x);
-    assert_eq!(-7.0, subject.vel.y);
-}
-
-#[test]
-fn test_update_applies_accel_to_vel_for_time() {
-    let loc = Vector2::<f32>::zeros();
-    let vel = Vector2::new(3.0, -2.0);
-    let accel = Vector2::new(0.0, -5.0);
-    let time = 0.5;
-
-    let mut subject = PlanarBody{
-        loc,
-        vel,
-        accel
-    };
-
-    subject.update(time);
-
-    assert_eq!(1.5, subject.loc.x);
-    assert_eq!(-1.625, subject.loc.y);
-    assert_eq!(3.0, subject.vel.x);
-    assert_eq!(-4.5, subject.vel.y);
+    assert_eq!(Vector2::<f32>::new(a_x, a_y), subject.accel);
+    assert_eq!(exp_loc_x, subject.loc.x);
+    assert_eq!(exp_loc_y, subject.loc.y);
+    assert_eq!(exp_vel_x, subject.vel.x);
+    assert_eq!(exp_vel_y, subject.vel.y);
 }
