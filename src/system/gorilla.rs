@@ -1,3 +1,4 @@
+use crate::component::Body;
 use crate::state::State;
 use ggez::Context;
 use crate::system::system::System;
@@ -34,25 +35,38 @@ pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GameResult<Entit
     Ok(gorilla)
 }
 
-pub fn spawn_rope(ecs: &mut recs::Ecs, from_entity: EntityId, to_entity: EntityId) -> GameResult<EntityId> {
-    let rope = ecs.create_entity();
+pub fn spawn_rope(state: &mut State, gorilla: EntityId, anchor: EntityId) -> GameResult<EntityId> {
+    let rope = state.ecs.create_entity();
 
-    let p1 = ecs.borrow::<Sprite>(from_entity).unwrap().location;
-    let p2 = ecs.borrow::<Sprite>(to_entity).unwrap().location;
-    let offset = p2 - p1;
+    let body_gorilla = state.world.bodies.rigid_body(state.ecs.borrow::<Body>(gorilla).unwrap().0).unwrap();
+    let body_anchor = state.world.bodies.rigid_body(state.ecs.borrow::<Body>(anchor).unwrap().0).unwrap();
 
-    ecs.set(rope, InitRevoluteJoint{
-        end1: from_entity,
-        end2: to_entity,
+    let pos_gorilla = body_gorilla.position();
+    let pos_anchor = body_anchor.position();
+    let offset = pos_anchor.translation.vector - pos_gorilla.translation.vector;
+
+    let heading = nalgebra::Rotation2::rotation_between(&nalgebra::Vector2::y(), &offset);
+    let angle = heading.angle();
+    let body_gorilla_mut = state.world.bodies.rigid_body_mut(state.ecs.borrow::<Body>(gorilla).unwrap().0).unwrap();
+    body_gorilla_mut.set_position(
+        nalgebra::Isometry2::new(
+            body_gorilla_mut.position().translation.vector, 
+            angle
+        )
+    );
+
+    state.ecs.set(rope, InitRevoluteJoint{
+        end1: gorilla,
+        end2: anchor,
         anchor1: nalgebra::Point2::new(0.0, offset.norm()).into(),
         anchor2: nalgebra::Point2::new(0.0, 0.0)
     }).unwrap();
-    crate::entity::with_sprite(ecs, rope, [0.0, 1.0, 1.0, 1.0].into(), [0.1, 0.0].into())?;
+    crate::entity::with_sprite(&mut state.ecs, rope, [0.0, 1.0, 1.0, 1.0].into(), [0.1, 0.0].into())?;
 
-    if let Ok(owns) = ecs.borrow_mut::<Owns>(from_entity) {
+    if let Ok(owns) = state.ecs.borrow_mut::<Owns>(gorilla) {
         owns.0.push(rope);
     }
-    if let Ok(owns) = ecs.borrow_mut::<Owns>(to_entity) {
+    if let Ok(owns) = state.ecs.borrow_mut::<Owns>(anchor) {
         owns.0.push(rope);
     }
 
@@ -76,7 +90,7 @@ impl System for GorillaSystem {
             }
 
             if ggez::input::keyboard::is_key_pressed(context, KeyCode::Space) {
-                self.try_add_rope(&mut state.ecs, entity)?;
+                self.try_add_rope(state, entity)?;
             } else {
                 self.try_remove_rope(&mut state.ecs, entity)?;
             }
@@ -101,14 +115,14 @@ impl GorillaSystem {
 
     fn try_add_rope(
         &mut self, 
-        ecs: &mut Ecs, 
+        state: &mut State, 
         entity: EntityId) -> GameResult {
-        let gorilla : Gorilla = ecs.get(entity).unwrap();
+        let gorilla : Gorilla = state.ecs.get(entity).unwrap();
         if let None = gorilla.rope {
-            let overlapping: &Overlapping = ecs.borrow(entity).unwrap();
+            let overlapping: &Overlapping = state.ecs.borrow(entity).unwrap();
             if let Some(&closest_anchor) = overlapping.0.first() {
-                let rope = spawn_rope(ecs, entity, closest_anchor)?;
-                ecs.set(entity, Gorilla{ rope: Some(rope) }).unwrap();
+                let rope = spawn_rope(state, entity, closest_anchor)?;
+                state.ecs.set(entity, Gorilla{ rope: Some(rope) }).unwrap();
             };
         }
         
