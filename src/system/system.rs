@@ -2,7 +2,6 @@ use crate::state::State;
 use recs::EntityId;
 use ggez::Context;
 use ggez::GameResult;
-use recs::Ecs;
 
 pub trait System {
 

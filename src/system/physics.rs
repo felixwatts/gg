@@ -1,3 +1,5 @@
+use crate::component::InitForce;
+use crate::component::Force;
 use crate::state::State;
 use crate::component::InitSensor;
 use crate::component::Sensor;
@@ -26,6 +28,7 @@ impl System for PhysicsSystem {
         self.init_colliders(state)?;
         self.init_sensors(state)?;
         self.init_revolute_joints(state)?;
+        self.init_forces(state)?;
 
         state.world.mechanical_world.step(
             &mut state.world.geometrical_world,
@@ -53,6 +56,10 @@ impl System for PhysicsSystem {
 
         if let Ok(sensor) = state.ecs.borrow::<Sensor>(entity) {
             state.world.colliders.remove(sensor.0);
+        }
+
+        if let Ok(force) = state.ecs.borrow::<Force>(entity) {
+            state.world.force_generators.remove(force.0);
         }
 
         if let Ok(body) = state.ecs.borrow::<Body>(entity) {
@@ -135,6 +142,25 @@ impl PhysicsSystem {
                     state.ecs.unset::<InitRevoluteJoint>(entity).unwrap();
                     state.ecs.set(entity, RevoluteJoint(joint_handle)).unwrap();
                 }
+            }            
+        }
+        Ok(())
+    }
+
+    fn init_forces(&mut self, state: &mut State) -> ggez::GameResult {
+        let mut ids: Vec<EntityId> = Vec::new();
+        let filter = component_filter!(InitForce);
+        state.ecs.collect_with(&filter, &mut ids);
+        for &entity in ids.iter() {
+            let param: &InitForce = state.ecs.borrow(entity).unwrap();
+            if let Ok(body) = state.ecs.get::<Body>(param.entity) {
+
+                let mut force_generator = nphysics2d::force_generator::ConstantAcceleration::new(param.force, 0.0);
+                force_generator.add_body_part(BodyPartHandle(body.0, 0));
+                let force_generator_handle = state.world.force_generators.insert(Box::new(force_generator));
+
+                state.ecs.unset::<InitForce>(entity).unwrap();
+                state.ecs.set(entity, Force(force_generator_handle)).unwrap();
             }            
         }
         Ok(())

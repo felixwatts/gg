@@ -16,7 +16,7 @@ pub fn spawn_anchor(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GameResult {
     
     with_body(ecs, root, loc, BodyStatus::Static)?;
     with_sensor(ecs, root, 0.05)?;
-    with_collider(ecs, root, 0.05)?;
+    // with_collider(ecs, root, 0.05)?;
     with_sprite(ecs, root, [1.0, 1.0, 1.0, 1.0], [0.1, 0.1].into())?;
 
     Ok(())
@@ -25,8 +25,6 @@ pub fn spawn_anchor(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GameResult {
 pub fn with_body(ecs: &mut recs::Ecs, entity: recs::EntityId, loc: Vector2<f32>, status: BodyStatus) -> GameResult {
     ecs.set(entity, InitBody(RigidBodyDesc::new()
         .translation(loc)
-        .mass(1.0)
-        .angular_inertia(1.0)
         .status(status))).unwrap();
 
         Ok(())

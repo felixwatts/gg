@@ -1,3 +1,4 @@
+use nphysics2d::force_generator::DefaultForceGeneratorHandle;
 use nalgebra::Vector2;
 use nphysics2d::object::DefaultColliderHandle;
 use nphysics2d::object::ColliderDesc;
@@ -40,6 +41,13 @@ pub struct Sensor(pub DefaultColliderHandle);
 
 pub struct Overlapping(pub Vec::<recs::EntityId>);
 
+pub struct InitForce{
+    pub entity: EntityId,
+    pub force: Vector2::<f32>
+}
+
+pub struct Force(pub DefaultForceGeneratorHandle);
+
 pub struct Sprite{
     pub color: [f32; 4],
     pub location: Vector2<f32>,
@@ -51,5 +59,6 @@ pub struct Focus;
 
 #[derive(Clone)]
 pub struct Gorilla {
-    pub rope: Option<EntityId>
+    pub rope: Option<EntityId>,
+    pub force: Option<EntityId>
 }

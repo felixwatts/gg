@@ -53,11 +53,11 @@ impl Engine {
             system.init(&mut engine.state, context)?;
         }
 
-        spawn_anchor(&mut engine.state.ecs, [-1.0, -1.0].into())?;
-        spawn_anchor(&mut engine.state.ecs, [-1.0, 1.0].into())?;
+        spawn_anchor(&mut engine.state.ecs, [-3.0, -3.0].into())?;
+        spawn_anchor(&mut engine.state.ecs, [-3.0, 3.0].into())?;
         spawn_anchor(&mut engine.state.ecs, [0.0, 0.0].into())?;
-        spawn_anchor(&mut engine.state.ecs, [1.0, -1.0].into())?;
-        spawn_anchor(&mut engine.state.ecs, [1.0, 1.0].into())?;
+        spawn_anchor(&mut engine.state.ecs, [3.0, -3.0].into())?;
+        spawn_anchor(&mut engine.state.ecs, [3.0, 3.0].into())?;
 
         Ok(engine)
     }
