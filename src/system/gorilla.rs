@@ -91,6 +91,13 @@ pub fn spawn_force(state: &mut State, gorilla: EntityId) -> GameResult<EntityId>
 impl System for GorillaSystem {
     fn init(&mut self, state: &mut State, _: &Context) -> GameResult {
         spawn_gorilla(&mut state.ecs, [-0.95, 2.0].into())?;
+
+        spawn_anchor(&mut state.ecs, [-3.0, -3.0].into())?;
+        spawn_anchor(&mut state.ecs, [-3.0, 3.0].into())?;
+        spawn_anchor(&mut state.ecs, [0.0, 0.0].into())?;
+        spawn_anchor(&mut state.ecs, [3.0, -3.0].into())?;
+        spawn_anchor(&mut state.ecs, [3.0, 3.0].into())?;
+
         Ok(())
     }
 

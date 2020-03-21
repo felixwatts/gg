@@ -1,7 +1,6 @@
 use crate::state::{State, PhysicalWorld};
 use crate::component::Owns;
 use crate::component::Dead;
-use crate::entity::spawn_anchor;
 use crate::system::system::System;
 use ggez::event::EventHandler;
 use ggez::GameResult;
@@ -52,12 +51,6 @@ impl Engine {
         for system in engine.systems.iter_mut() {
             system.init(&mut engine.state, context)?;
         }
-
-        spawn_anchor(&mut engine.state.ecs, [-3.0, -3.0].into())?;
-        spawn_anchor(&mut engine.state.ecs, [-3.0, 3.0].into())?;
-        spawn_anchor(&mut engine.state.ecs, [0.0, 0.0].into())?;
-        spawn_anchor(&mut engine.state.ecs, [3.0, -3.0].into())?;
-        spawn_anchor(&mut engine.state.ecs, [3.0, 3.0].into())?;
 
         Ok(engine)
     }
