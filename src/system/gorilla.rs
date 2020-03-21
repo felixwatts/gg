@@ -1,3 +1,4 @@
+use crate::state::State;
 use ggez::Context;
 use crate::system::system::System;
 use nalgebra::Vector2;
@@ -43,7 +44,7 @@ pub fn spawn_rope(ecs: &mut recs::Ecs, from_entity: EntityId, to_entity: EntityI
     ecs.set(rope, InitRevoluteJoint{
         end1: from_entity,
         end2: to_entity,
-        anchor1: offset.into(),
+        anchor1: nalgebra::Point2::new(0.0, offset.norm()).into(),
         anchor2: nalgebra::Point2::new(0.0, 0.0)
     }).unwrap();
     crate::entity::with_sprite(ecs, rope, [0.0, 1.0, 1.0, 1.0].into(), [0.1, 0.0].into())?;
@@ -59,34 +60,34 @@ pub fn spawn_rope(ecs: &mut recs::Ecs, from_entity: EntityId, to_entity: EntityI
 }
 
 impl System for GorillaSystem {
-    fn init(&mut self, ecs: &mut Ecs, _: &Context) -> GameResult {
-        spawn_gorilla(ecs, [-0.95, 2.0].into())?;
+    fn init(&mut self, state: &mut State, _: &Context) -> GameResult {
+        spawn_gorilla(&mut state.ecs, [-0.95, 2.0].into())?;
         Ok(())
     }
 
-    fn update(&mut self, ecs: &mut Ecs, context: &Context) -> GameResult {
+    fn update(&mut self, state: &mut State, context: &Context) -> GameResult {
         let mut ids: Vec<EntityId> = Vec::new();
         let filter = component_filter!(Gorilla, Owns, Sprite);
-        ecs.collect_with(&filter, &mut ids);
+        state.ecs.collect_with(&filter, &mut ids);
         for &entity in ids.iter() {
 
-            if ecs.borrow::<Sprite>(entity).unwrap().location.y < -10.0 {
-                ecs.set(entity, Dead).unwrap();
+            if state.ecs.borrow::<Sprite>(entity).unwrap().location.y < -10.0 {
+                state.ecs.set(entity, Dead).unwrap();
             }
 
             if ggez::input::keyboard::is_key_pressed(context, KeyCode::Space) {
-                self.try_add_rope(ecs, entity)?;
+                self.try_add_rope(&mut state.ecs, entity)?;
             } else {
-                self.try_remove_rope(ecs, entity)?;
+                self.try_remove_rope(&mut state.ecs, entity)?;
             }
 
         }
         Ok(())
     }
     
-    fn teardown_entity(&mut self, entity: EntityId, ecs: &mut Ecs) -> GameResult {
-        if let Ok(&_) = ecs.borrow::<Gorilla>(entity) {
-            spawn_gorilla(ecs, [-0.5, 2.0].into())?;
+    fn teardown_entity(&mut self, entity: EntityId, state: &mut State) -> GameResult {
+        if let Ok(&_) = state.ecs.borrow::<Gorilla>(entity) {
+            spawn_gorilla(&mut state.ecs, [-0.5, 2.0].into())?;
         }
         Ok(())
     }
