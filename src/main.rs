@@ -4,6 +4,7 @@ mod engine;
 mod environment;
 mod entity;
 mod state;
+mod network;
 
 extern crate nalgebra;
 extern crate ncollide2d;
