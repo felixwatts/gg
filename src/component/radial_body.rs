@@ -39,7 +39,7 @@ impl RadialBody {
 
     pub fn to_planar(&self) -> PlanarBody {
         let loc = self.origin + self.radius();
-        let vel = self.tangent() * self.vel;
+        let vel = self.tangent() * self.vel * self.radius;
         let accel = self.accel;
         PlanarBody{
             loc,
@@ -213,6 +213,9 @@ fn test_to_planar() {
 
     // vel affects vel of planar
     expect_to_planar(0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0);
+
+    // radius affects loc of planar
+    expect_to_planar(0.0, 0.0, 2.0, 0.0, 1.0, 0.0, 0.0, 0.0, 2.0, 2.0, 0.0);
 
     // acc affects acc of planar
     expect_to_planar(0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0);

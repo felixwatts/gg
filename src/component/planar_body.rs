@@ -1,3 +1,4 @@
+use crate::component::radial_body::RadialBody;
 use nalgebra::Vector2;
 
 #[derive(Clone)]
@@ -15,22 +16,22 @@ impl PlanarBody {
         self.vel += self.accel * duration;
     }
 
-    // pub fn to_radial(&self, ecs: &Ecs, origin: EntityId) -> RadialLocVel {
-    //     let origin_loc_vel : PlanarBody = ecs.get(origin).unwrap();
-
-    //     let radius = self.loc - origin_loc_vel.loc;
-    //     let loc_radial = (radius.x / radius.y).atanh();
-
-    //     let tangent = nalgebra::Vector2::new(radius.y, radius.x);
-    //     let vel_planar = self.vel.dot(&tangent) / tangent.norm();
-
-    //     RadialLocVel {
-    //         origin: origin,
-    //         radius: radius.norm(),
-    //         loc: loc_radial,
-    //         vel: vel_planar
-    //     }
-    // }
+    pub fn to_radial(&self, origin: Vector2::<f32>) -> RadialBody {
+        let radius = self.loc - origin;
+        let loc = (radius.y / radius.x).atanh();
+        let tangent = Vector2::new(
+            (loc + (std::f32::consts::PI * 0.5)).sin(),
+            (loc + (std::f32::consts::PI * 0.5)).cos()
+        );
+        let vel = nalgebra::Matrix::dot(&self.vel, &tangent) / radius.norm();
+        RadialBody{
+            origin,
+            radius: radius.norm(),
+            loc,
+            vel,
+            accel: self.accel
+        }
+    }
 
     pub fn distance_to(&self, other: PlanarBody) -> f32 {
         (self.loc - other.loc).norm()
@@ -76,4 +77,32 @@ fn expect_update(loc_x: f32, loc_y: f32, vel_x: f32, vel_y: f32, a_x: f32, a_y: 
     assert_eq!(exp_loc_y, subject.loc.y);
     assert_eq!(exp_vel_x, subject.vel.x);
     assert_eq!(exp_vel_y, subject.vel.y);
+}
+
+#[cfg(test)]
+fn assert_roughly_eq(expected: f32, actual: f32) {
+    assert!((expected - actual).abs() < 0.0001, "{} != {}", expected, actual);
+}
+
+#[test]
+fn test_to_radial() {
+    expect_to_radial(0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0);
+}
+
+#[cfg(test)]
+fn expect_to_radial(loc_x: f32, loc_y: f32, vel_x: f32, vel_y: f32, a_x: f32, a_y: f32, o_x: f32, o_y: f32, 
+    exp_radius: f32, exp_loc: f32, exp_vel: f32, exp_accel: f32) {
+    let mut subject = PlanarBody{
+        loc: Vector2::new(loc_x, loc_y),
+        vel: Vector2::new(vel_x, vel_y),
+        accel: Vector2::new(a_x, a_y)
+    };
+
+    let actual = subject.to_radial(Vector2::new(o_x, o_y));
+
+    assert_eq!(Vector2::new(o_x, o_y), actual.origin);
+    assert_eq!(Vector2::<f32>::new(a_x, a_y), actual.accel);
+    assert_eq!(exp_radius, actual.radius);
+    assert_roughly_eq(exp_loc, actual.loc);
+    assert_roughly_eq(exp_vel, actual.vel);
 }
