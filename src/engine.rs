@@ -43,8 +43,8 @@ impl Engine {
             },
             systems: vec![
                 Box::new(crate::system::render::RenderSystem::new(context)?),
-                Box::new(crate::system::physics_simple::PhysicsSimpleSystem{}),
-                Box::new(crate::system::gorilla::GorillaSystem::new())
+                // Box::new(crate::system::physics_simple::PhysicsSimpleSystem{}),
+                // Box::new(crate::system::gorilla::GorillaSystem::new())
             ]
         };
 
