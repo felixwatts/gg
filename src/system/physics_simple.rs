@@ -27,7 +27,7 @@ impl System for PhysicsSimpleSystem {
 }
 
 impl PhysicsSimpleSystem {
-    fn refresh_planar_loc_vels(&mut self, state: &mut State, _: &Context) -> GameResult {
+    fn refresh_planar_loc_vels(&mut self, state: &mut State, context: &Context) -> GameResult {
         let mut ids: Vec<EntityId> = Vec::new();
         let filter = component_filter!(PlanarLocVel);
         state.ecs.collect_with(&filter, &mut ids);
@@ -36,7 +36,7 @@ impl PhysicsSimpleSystem {
 
             // apply gravity to velocity
             if let Ok(gravity) = state.ecs.get::<Gravity>(entity) {
-                loc_vel.vel.y -= gravity.0 * 0.001;
+                loc_vel.vel.y -= gravity.0 * ggez::timer::average_delta(context).as_secs_f32();
             }
 
             // apply velocity to location
@@ -77,7 +77,7 @@ impl PhysicsSimpleSystem {
     
             //     let v_vertical = vy / (vy + vx);
     
-            //     loc_vel.vel = loc_vel.vel - ((gravity.0 * 0.001) * v_vertical);
+            //     loc_vel.vel = loc_vel.vel - ((gravity.0  * ggez::timer::average_delta(context).as_secs_f32()) * v_vertical);
             // }
 
             // apply velocity to location
