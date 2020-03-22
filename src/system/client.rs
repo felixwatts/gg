@@ -6,24 +6,25 @@ use crate::state::State;
 use crate::system::system::System;
 use crate::network::ClientMsg;
 use crate::network::Button;
+use crate::network::tx;
 
 pub struct ClientSystem {}
 
 impl System for ClientSystem {
     fn key_down(&mut self,
         state: &mut State,
-        context: &mut Context,
+        _: &mut Context,
         keycode: KeyCode,
         _: KeyMods,
-        repeat: bool) {
+        _: bool) {
         match keycode {
             KeyCode::Space => {
                 let msg = ClientMsg::ButtonStateChange(ButtonState{button: Button::One, is_down: true});
-                crate::network::client_tx(&mut state.ecs, msg);
+                tx(state, msg);
             },
             KeyCode::Return => {
                 let msg = ClientMsg::ButtonStateChange(ButtonState{button: Button::Two, is_down: true});
-                crate::network::client_tx(&mut state.ecs, msg);
+                tx(state, msg);
             },
             _ => {}
         }
@@ -31,17 +32,17 @@ impl System for ClientSystem {
 
     fn key_up(&mut self,
         state: &mut State,
-        context: &mut Context,
+        _: &mut Context,
         keycode: KeyCode,
         _: KeyMods) {
         match keycode {
             KeyCode::Space => {
                 let msg = ClientMsg::ButtonStateChange(ButtonState{button: Button::One, is_down: false});
-                crate::network::client_tx(&mut state.ecs, msg);
+                tx(state, msg);
             },
             KeyCode::Return => {
                 let msg = ClientMsg::ButtonStateChange(ButtonState{button: Button::Two, is_down: false});
-                crate::network::client_tx(&mut state.ecs, msg);
+                tx(state, msg);
             },
             _ => {}
         }

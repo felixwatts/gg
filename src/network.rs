@@ -1,17 +1,10 @@
+use crate::component::TxQueue;
+use crate::state::State;
 use ggez::GameResult;
 use std::collections::VecDeque;
 
-static NEXT_TX_NUM: u32 = 0;
-static NEXT_RX_NUM: u32 = 0;
-
-pub fn client_tx(ecs: &mut recs::Ecs, msg: ClientMsg) {
-    let msg_entity = ecs.create_entity();
-    crate::network::NEXT_TX_NUM += 1;
-    let msg_component = crate::component::ClientMsg{
-        msg,
-        order: crate::network::NEXT_TX_NUM
-    };
-    ecs.set(msg_entity, msg_component);
+pub fn tx<TMsg>(state: &mut State, msg: TMsg) where TMsg: 'static {
+    state.ecs.borrow_mut::<TxQueue<TMsg>>(state.tx_queue).unwrap().0.push(msg);
 }
 
 pub trait TxChannel<TMsg>{
@@ -30,8 +23,8 @@ pub enum Button{
 
 #[derive(Clone)]
 pub struct ButtonState{
-    button: Button,
-    is_down: bool
+    pub button: Button,
+    pub is_down: bool
 }
 
 #[derive(Clone)]

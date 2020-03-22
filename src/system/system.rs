@@ -24,15 +24,15 @@ pub trait System {
     }
 
     fn key_down(&mut self,
-        state: &mut State,
-        context: &mut Context,
-        keycode: KeyCode,
-        keymod: KeyMods,
-        repeat: bool) {}
+        _: &mut State,
+        _: &mut Context,
+        _: KeyCode,
+        _: KeyMods,
+        _: bool) {}
 
     fn key_up(&mut self,
-        state: &mut State,
-        context: &mut Context,
-        keycode: KeyCode,
-        keymod: KeyMods) {}
+        _: &mut State,
+        _: &mut Context,
+        _: KeyCode,
+        _: KeyMods) {}
 }

@@ -24,12 +24,6 @@ pub struct Gorilla;
 
 pub struct Anchor;
 
-pub struct ClientMsg{
-    msg: crate::network::ClientMsg,
-    order: u32
-}
+pub struct TxQueue<TMsg>(pub Vec::<TMsg>);
 
-pub struct ServerMsg{
-    msg: crate::network::ServerMsg,
-    order: u32
-}
+pub struct RxQueue<TMsg>(pub Vec::<TMsg>);

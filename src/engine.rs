@@ -1,7 +1,9 @@
-use crate::network::RxChannel;
-use crate::network::TxChannel;
+use std::marker::PhantomData;
 use crate::network::ServerMsg;
 use crate::network::ClientMsg;
+use crate::network::RxChannel;
+use crate::network::TxChannel;
+use crate::component::{TxQueue, RxQueue};
 use ggez::event::KeyMods;
 use ggez::event::KeyCode;
 use crate::component::Owns;
@@ -11,21 +13,37 @@ use crate::system::system::System;
 use ggez::GameResult;
 use ggez::Context;
 
-pub struct Engine{
+pub struct Engine<TTx, TRx>{
     state: State,
-    systems: Vec<Box<dyn System>>
+    systems: Vec<Box<dyn System>>,
+    
+    phantom1: PhantomData<TTx>,
+    phantom2: PhantomData<TRx>
 }
 
-pub fn new_client(context: &mut ggez::Context) -> GameResult<Engine> {
-    let mut engine = Engine{
+pub fn new_client(context: &mut ggez::Context) -> GameResult<Engine<ClientMsg, ServerMsg>> {
+
+    let mut ecs = recs::Ecs::new();
+
+    let tx_queue = ecs.create_entity();
+    ecs.set(tx_queue, TxQueue::<ClientMsg>(vec![])).unwrap();
+
+    let rx_queue = ecs.create_entity();
+    ecs.set(rx_queue, RxQueue::<ServerMsg>(vec![])).unwrap();
+
+    let mut engine = Engine::<ClientMsg, ServerMsg>{
         state: State{
-            ecs: recs::Ecs::new()
+            ecs,
+            tx_queue,
+            rx_queue,
         },
         systems: vec![
             Box::new(crate::system::render::RenderSystem::new(context)?),
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::client::ClientSystem{})
-        ]
+        ],
+        phantom1: PhantomData{},
+        phantom2: PhantomData{}
     };
 
     for system in engine.systems.iter_mut() {
@@ -35,15 +53,27 @@ pub fn new_client(context: &mut ggez::Context) -> GameResult<Engine> {
     Ok(engine)
 }
 
-pub fn new_server(context: &mut ggez::Context) -> GameResult<Engine> {
-    let mut engine = Engine{
+pub fn new_server(context: &mut ggez::Context) -> GameResult<Engine<ServerMsg, ClientMsg>> {
+    let mut ecs = recs::Ecs::new();
+
+    let tx_queue = ecs.create_entity();
+    ecs.set(tx_queue, TxQueue::<ServerMsg>(vec![])).unwrap();
+
+    let rx_queue = ecs.create_entity();
+    ecs.set(rx_queue, RxQueue::<ClientMsg>(vec![])).unwrap();
+
+    let mut engine = Engine::<ServerMsg, ClientMsg>{
         state: State{
-            ecs: recs::Ecs::new()
+            ecs,
+            tx_queue,
+            rx_queue
         },
         systems: vec![
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::gorilla::GorillaSystem{})
-        ]
+        ],
+        phantom1: PhantomData{},
+        phantom2: PhantomData{}
     };
 
     for system in engine.systems.iter_mut() {
@@ -53,15 +83,15 @@ pub fn new_server(context: &mut ggez::Context) -> GameResult<Engine> {
     Ok(engine)
 }
 
-impl Engine {
+impl<TTx, TRx> Engine<TTx, TRx> where TRx: 'static, TTx: 'static {
 
-    pub fn update<TTx, TRx> (
+    pub fn update (
         &mut self, 
         context: &mut Context, 
-        tx: &dyn TxChannel<TTx>, 
-        rx: &mut dyn RxChannel<TRx>) -> ggez::GameResult where TRx: 'static {
+        tx: &mut dyn TxChannel<TTx>, 
+        rx: &mut dyn RxChannel<TRx>) -> ggez::GameResult {
 
-        self.read_network_messages(rx);
+        self.read_network_messages(rx)?;
 
         for system in self.systems.iter_mut() {
             system.update(&mut self.state, context)?;
@@ -69,7 +99,7 @@ impl Engine {
 
         self.teardown_dead_entities()?;
 
-        self.write_network_messages(tx);
+        self.write_network_messages(tx)?;
 
         Ok(())
     }
@@ -137,18 +167,21 @@ impl Engine {
         Ok(())
     }
 
-    fn read_network_messages<TRx>(&self, rx: &mut dyn RxChannel<TRx>) where TRx : 'static {
+    fn read_network_messages(&mut self, rx: &mut dyn RxChannel<TRx>) -> GameResult {
         let mut buffer = vec![];
-        rx.dequeue(&mut buffer);
-    
-        for msg in buffer{
-            // let m = msg.clone();
-            let msg_entity = self.state.ecs.create_entity();
-            self.state.ecs.set(msg_entity, msg).unwrap();
-        }
+        rx.dequeue(&mut buffer)?;
+
+        self.state.ecs.set(self.state.rx_queue, RxQueue(buffer)).unwrap();
+
+        Ok(())
     }
 
-    fn write_network_messages<TTx>(&self, tx: &dyn TxChannel<TTx>){
-        // TODO
+    fn write_network_messages(&mut self, tx: &mut dyn TxChannel<TTx>)-> GameResult {
+        let to_tx = self.state.ecs.set(self.state.tx_queue, TxQueue(vec![])).unwrap().unwrap();
+        for msg in to_tx.0 {
+            tx.enqueue(msg)?;
+        }
+
+        Ok(())
     }
 }
