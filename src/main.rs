@@ -7,10 +7,7 @@ mod state;
 mod network;
 
 extern crate nalgebra;
-extern crate ncollide2d;
-extern crate nphysics2d;
 extern crate ggez;
-extern crate mint;
 #[macro_use]
 extern crate recs;
 

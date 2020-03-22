@@ -18,7 +18,7 @@ impl PlanarBody {
 
     pub fn to_radial(&self, origin: Vector2::<f32>) -> RadialBody {
         let radius = self.loc - origin;
-        let loc = (radius.y / radius.x).atanh();
+        let loc = radius.x.atan2(radius.y);
         let tangent = Vector2::new(
             (loc + (std::f32::consts::PI * 0.5)).sin(),
             (loc + (std::f32::consts::PI * 0.5)).cos()
@@ -31,10 +31,6 @@ impl PlanarBody {
             vel,
             accel: self.accel
         }
-    }
-
-    pub fn distance_to(&self, other: PlanarBody) -> f32 {
-        (self.loc - other.loc).norm()
     }
 }
 
@@ -80,19 +76,46 @@ fn expect_update(loc_x: f32, loc_y: f32, vel_x: f32, vel_y: f32, a_x: f32, a_y: 
 }
 
 #[cfg(test)]
-fn assert_roughly_eq(expected: f32, actual: f32) {
-    assert!((expected - actual).abs() < 0.0001, "{} != {}", expected, actual);
+fn assert_roughly_eq(name: &'static str, expected: f32, actual: f32) {
+    assert!((expected - actual).abs() < 0.0001, "{}: {} != {}", name, expected, actual);
 }
 
 #[test]
 fn test_to_radial() {
-    expect_to_radial(0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0);
+    // from.loc handled
+    expect_to_radial(0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+    expect_to_radial(1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, std::f32::consts::PI * 0.5, 0.0);
+    expect_to_radial(0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, std::f32::consts::PI * 1.0, 0.0);
+    expect_to_radial(-1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, std::f32::consts::PI * -0.5, 0.0);
+
+    // origin handled
+    expect_to_radial(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 1.0, 0.0, 0.0);
+    expect_to_radial(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0, 0.0, 1.0, std::f32::consts::PI * 0.5, 0.0);
+    expect_to_radial(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, std::f32::consts::PI * 1.0, 0.0);
+    expect_to_radial(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, std::f32::consts::PI * -0.5, 0.0);
+
+    // from.vel handled
+    expect_to_radial(0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0);
+    expect_to_radial(0.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+    expect_to_radial(0.0, 1.0, -1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0);
+
+    expect_to_radial(1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0, std::f32::consts::PI * 0.5, 1.0);
+    expect_to_radial(1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, std::f32::consts::PI * 0.5, 0.0);
+    expect_to_radial(1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, std::f32::consts::PI * 0.5, -1.0);
+
+    // TODO two more quadrants
+
+    // from.accel handled
+    expect_to_radial(0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+    expect_to_radial(0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+    expect_to_radial(0.0, 1.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0);
+    expect_to_radial(0.0, 1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 1.0, 0.0, 0.0);
 }
 
 #[cfg(test)]
 fn expect_to_radial(loc_x: f32, loc_y: f32, vel_x: f32, vel_y: f32, a_x: f32, a_y: f32, o_x: f32, o_y: f32, 
-    exp_radius: f32, exp_loc: f32, exp_vel: f32, exp_accel: f32) {
-    let mut subject = PlanarBody{
+    exp_radius: f32, exp_loc: f32, exp_vel: f32) {
+    let subject = PlanarBody{
         loc: Vector2::new(loc_x, loc_y),
         vel: Vector2::new(vel_x, vel_y),
         accel: Vector2::new(a_x, a_y)
@@ -103,6 +126,6 @@ fn expect_to_radial(loc_x: f32, loc_y: f32, vel_x: f32, vel_y: f32, a_x: f32, a_
     assert_eq!(Vector2::new(o_x, o_y), actual.origin);
     assert_eq!(Vector2::<f32>::new(a_x, a_y), actual.accel);
     assert_eq!(exp_radius, actual.radius);
-    assert_roughly_eq(exp_loc, actual.loc);
-    assert_roughly_eq(exp_vel, actual.vel);
+    assert_roughly_eq("loc", exp_loc, actual.loc);
+    assert_roughly_eq("vel", exp_vel, actual.vel);
 }

@@ -1,5 +1,5 @@
 use crate::component::Owns;
-use crate::state::{State, PhysicalWorld};
+use crate::state::State;
 use crate::component::Dead;
 use crate::system::system::System;
 use ggez::event::EventHandler;
@@ -7,7 +7,6 @@ use ggez::GameResult;
 use ggez::Context;
 
 pub struct Engine {
-    // ecs: recs::Ecs,
     state: State,
     systems: Vec<Box<dyn System>>
 }
@@ -38,13 +37,12 @@ impl Engine {
     pub fn new(context: &mut ggez::Context) -> GameResult<Engine> {
         let mut engine = Engine{
             state: State{
-                ecs: recs::Ecs::new(),
-                world: PhysicalWorld::new()
+                ecs: recs::Ecs::new()
             },
             systems: vec![
                 Box::new(crate::system::render::RenderSystem::new(context)?),
-                // Box::new(crate::system::physics_simple::PhysicsSimpleSystem{}),
-                // Box::new(crate::system::gorilla::GorillaSystem::new())
+                Box::new(crate::system::physics::PhysicsSystem{}),
+                Box::new(crate::system::gorilla::GorillaSystem{})
             ]
         };
 
