@@ -11,7 +11,7 @@ use crate::system::system::System;
 use ggez::GameResult;
 use ggez::Context;
 
-pub struct Engine {
+pub struct Engine{
     state: State,
     systems: Vec<Box<dyn System>>
 }
@@ -55,11 +55,11 @@ pub fn new_server(context: &mut ggez::Context) -> GameResult<Engine> {
 
 impl Engine {
 
-    pub fn update<TTx, TRx>(
+    pub fn update<TTx, TRx> (
         &mut self, 
         context: &mut Context, 
         tx: &dyn TxChannel<TTx>, 
-        rx: &dyn RxChannel<TRx>) -> ggez::GameResult {
+        rx: &mut dyn RxChannel<TRx>) -> ggez::GameResult where TRx: 'static {
 
         self.read_network_messages(rx);
 
@@ -137,7 +137,7 @@ impl Engine {
         Ok(())
     }
 
-    fn read_network_messages<TRx>(&self, rx: &dyn RxChannel<TRx>) {
+    fn read_network_messages<TRx>(&self, rx: &mut dyn RxChannel<TRx>) where TRx : 'static {
         let mut buffer = vec![];
         rx.dequeue(&mut buffer);
     

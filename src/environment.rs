@@ -18,8 +18,8 @@ pub struct Environment {
 }
 
 struct LocalClientServer{
-    client_engine: Engine<ClientMsg, ServerMsg>,
-    server_engine: Engine<ServerMsg, ClientMsg>,
+    client_engine: Engine,
+    server_engine: Engine,
     client_server_channel: SimChannel<ClientMsg>,
     server_client_channel: SimChannel<ServerMsg>,
 }
@@ -45,8 +45,8 @@ impl LocalClientServer{
 impl EventHandler for LocalClientServer {
     fn update(&mut self, context: &mut Context) -> ggez::GameResult {
 
-        self.client_engine.update(context, &self.client_server_channel, &self.server_client_channel);
-        self.server_engine.update(context, &self.server_client_channel, &self.client_server_channel); 
+        self.client_engine.update(context, &self.client_server_channel, &mut self.server_client_channel);
+        self.server_engine.update(context, &self.server_client_channel, &mut self.client_server_channel); 
 
         Ok(())
     }

@@ -42,7 +42,8 @@ impl System for ClientSystem {
             KeyCode::Return => {
                 let msg = ClientMsg::ButtonStateChange(ButtonState{button: Button::Two, is_down: false});
                 crate::network::client_tx(&mut state.ecs, msg);
-            }
+            },
+            _ => {}
         }
     }
 }
