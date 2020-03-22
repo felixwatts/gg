@@ -11,6 +11,7 @@ pub struct Dead;
 #[derive(Clone)]
 pub struct Owns(pub Vec::<EntityId>);
 
+#[derive(Clone)]
 pub struct Sprite{
     pub color: [f32; 4],
     pub location: Vector2<f32>,
@@ -18,12 +19,19 @@ pub struct Sprite{
     pub size: Vector2<f32>
 }
 
+#[derive(Clone)]
 pub struct Focus;
 
-pub struct Gorilla;
+#[derive(Clone)]
+pub struct Gorilla{
+    pub button_state: [bool; 2]
+}
 
 pub struct Anchor;
 
 pub struct TxQueue<TMsg>(pub Vec::<TMsg>);
 
+#[derive(Clone)]
 pub struct RxQueue<TMsg>(pub Vec::<TMsg>);
+
+pub struct Network;

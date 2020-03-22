@@ -1,3 +1,4 @@
+use crate::component::Network;
 use crate::component::Anchor;
 use crate::state::State;
 use ggez::Context;
@@ -10,18 +11,16 @@ use crate::component::Gorilla;
 use crate::component::body::Body;
 use ggez::GameResult;
 use recs::EntityId;
-use ggez::input::keyboard::KeyCode;
 
-
-pub struct GorillaSystem {
-}
+pub struct GorillaSystem {}
 
 pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GameResult<EntityId> {
     let gorilla = ecs.create_entity();
     with_sprite(ecs, gorilla, [1.0, 0.0, 0.0, 1.0], [0.3, 0.3].into())?;
     ecs.set(gorilla, Focus).unwrap();
-    ecs.set(gorilla, Gorilla).unwrap();
+    ecs.set(gorilla, Gorilla{button_state:[false, false]}).unwrap();
     ecs.set(gorilla, Body::new(loc, Vector2::zeros(), Vector2::new(0.0, -10.0))).unwrap();
+    ecs.set(gorilla, Network).unwrap();
 
     Ok(gorilla)
 }
@@ -31,6 +30,7 @@ pub fn spawn_anchor(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GameResult<Entity
     ecs.set(anchor, Anchor).unwrap();
     ecs.set(anchor, Body::new(loc, Vector2::zeros(), Vector2::zeros())).unwrap();
     with_sprite(ecs, anchor, [0.0, 1.0, 1.0, 1.0], [0.1, 0.1].into())?;
+    ecs.set(anchor, Network).unwrap();
 
     Ok(anchor)
 }
@@ -52,7 +52,7 @@ impl System for GorillaSystem {
     fn update(
         &mut self, 
         state: &mut State, 
-        context: &Context) -> GameResult {
+        _: &Context) -> GameResult {
         let mut ids: Vec<EntityId> = Vec::new();
         let filter = component_filter!(Gorilla, Body);
         state.ecs.collect_with(&filter, &mut ids);
@@ -62,13 +62,15 @@ impl System for GorillaSystem {
                 state.ecs.set(entity, Dead).unwrap();
             }
 
-            if ggez::input::keyboard::is_key_pressed(context, KeyCode::Space) {
+            let gorilla = state.ecs.get::<Gorilla>(entity).unwrap();
+
+            if gorilla.button_state[0] {
                 self.try_add_rope(state, entity);
             } else {
                 self.try_remove_rope(state, entity);
             }
 
-            if ggez::input::keyboard::is_key_pressed(context, KeyCode::Return) {
+            if gorilla.button_state[1] {
                 if let Ok(body) = state.ecs.borrow_mut::<Body>(entity) {
                     body.set_acc(Vector2::new(0.0, -20.0));
                 }

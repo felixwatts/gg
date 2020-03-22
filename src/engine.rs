@@ -38,9 +38,9 @@ pub fn new_client(context: &mut ggez::Context) -> GameResult<Engine<ClientMsg, S
             rx_queue,
         },
         systems: vec![
-            Box::new(crate::system::render::RenderSystem::new(context)?),
+            Box::new(crate::system::client::ClientSystem::new()),
             Box::new(crate::system::physics::PhysicsSystem{}),
-            Box::new(crate::system::client::ClientSystem{})
+            Box::new(crate::system::render::RenderSystem::new(context)?),
         ],
         phantom1: PhantomData{},
         phantom2: PhantomData{}
@@ -69,8 +69,12 @@ pub fn new_server(context: &mut ggez::Context) -> GameResult<Engine<ServerMsg, C
             rx_queue
         },
         systems: vec![
+            Box::new(crate::system::server::ServerSystem{}),
             Box::new(crate::system::physics::PhysicsSystem{}),
-            Box::new(crate::system::gorilla::GorillaSystem{})
+            Box::new(crate::system::gorilla::GorillaSystem{}),
+            
+            // temp for debugging
+            // Box::new(crate::system::render::RenderSystem::new(context)?),
         ],
         phantom1: PhantomData{},
         phantom2: PhantomData{}

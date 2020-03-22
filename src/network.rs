@@ -1,3 +1,6 @@
+use crate::component::Sprite;
+use crate::component::body::Body;
+use recs::EntityId;
 use crate::component::TxQueue;
 use crate::state::State;
 use ggez::GameResult;
@@ -16,23 +19,16 @@ pub trait RxChannel<TMsg>{
 }
 
 #[derive(Clone)]
-pub enum Button{
-    One,
-    Two
+pub enum ServerMsg{
+    Kill(EntityId),
+    SetBody(EntityId, Body),
+    SetSprite(EntityId, Sprite),
+    SetFocus(EntityId)
 }
-
-#[derive(Clone)]
-pub struct ButtonState{
-    pub button: Button,
-    pub is_down: bool
-}
-
-#[derive(Clone)]
-pub enum ServerMsg{}
 
 #[derive(Clone)]
 pub enum ClientMsg{
-    ButtonStateChange(ButtonState)
+    ButtonStateChange([bool; 2])
 }
 
 enum SimMsg<T> {

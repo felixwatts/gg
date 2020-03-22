@@ -5,6 +5,7 @@ mod environment;
 mod entity;
 mod state;
 mod network;
+mod local_client_server;
 
 extern crate nalgebra;
 extern crate ggez;

@@ -2,6 +2,7 @@ use nalgebra::Vector2;
 use crate::component::radial_body::RadialBody;
 use crate::component::planar_body::PlanarBody;
 
+#[derive(Clone)]
 pub enum Body {
     Planar(PlanarBody),
     Radial(RadialBody)
