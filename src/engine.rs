@@ -1,5 +1,5 @@
-use crate::state::{State, PhysicalWorld};
 use crate::component::Owns;
+use crate::state::State;
 use crate::component::Dead;
 use crate::system::system::System;
 use ggez::event::EventHandler;
@@ -7,7 +7,6 @@ use ggez::GameResult;
 use ggez::Context;
 
 pub struct Engine {
-    // ecs: recs::Ecs,
     state: State,
     systems: Vec<Box<dyn System>>
 }
@@ -38,13 +37,12 @@ impl Engine {
     pub fn new(context: &mut ggez::Context) -> GameResult<Engine> {
         let mut engine = Engine{
             state: State{
-                ecs: recs::Ecs::new(),
-                world: PhysicalWorld::new()
+                ecs: recs::Ecs::new()
             },
             systems: vec![
                 Box::new(crate::system::render::RenderSystem::new(context)?),
-                Box::new(crate::system::physics::PhysicsSystem::new()),
-                Box::new(crate::system::gorilla::GorillaSystem::new())
+                Box::new(crate::system::physics::PhysicsSystem{}),
+                Box::new(crate::system::gorilla::GorillaSystem{})
             ]
         };
 
@@ -59,8 +57,8 @@ impl Engine {
         let mut dead_entities = vec![];
         let filter = component_filter!(Dead);
         self.state.ecs.collect_with(&filter, &mut dead_entities);
-        for &entity in dead_entities.iter() {
-            self.teardown_entity(entity)?;
+        for entity in dead_entities.iter() {
+            self.teardown_entity(*entity)?;
         }
 
         Ok(())
@@ -73,7 +71,7 @@ impl Engine {
         }
 
         if let Ok(owns) = self.state.ecs.get::<Owns>(entity) {
-            for owned_entity in owns.0 {
+            for &owned_entity in owns.0.iter() {
                 self.teardown_entity(owned_entity)?;
             }
         }
