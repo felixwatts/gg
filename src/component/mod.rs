@@ -23,3 +23,13 @@ pub struct Focus;
 pub struct Gorilla;
 
 pub struct Anchor;
+
+pub struct ClientMsg{
+    msg: crate::network::ClientMsg,
+    order: u32
+}
+
+pub struct ServerMsg{
+    msg: crate::network::ServerMsg,
+    order: u32
+}

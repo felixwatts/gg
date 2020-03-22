@@ -1,8 +1,13 @@
+use crate::network::RxChannel;
+use crate::network::TxChannel;
+use crate::network::ServerMsg;
+use crate::network::ClientMsg;
+use ggez::event::KeyMods;
+use ggez::event::KeyCode;
 use crate::component::Owns;
 use crate::state::State;
 use crate::component::Dead;
 use crate::system::system::System;
-use ggez::event::EventHandler;
 use ggez::GameResult;
 use ggez::Context;
 
@@ -11,8 +16,52 @@ pub struct Engine {
     systems: Vec<Box<dyn System>>
 }
 
-impl EventHandler for Engine {
-    fn update(&mut self, context: &mut Context) -> ggez::GameResult {
+pub fn new_client(context: &mut ggez::Context) -> GameResult<Engine> {
+    let mut engine = Engine{
+        state: State{
+            ecs: recs::Ecs::new()
+        },
+        systems: vec![
+            Box::new(crate::system::render::RenderSystem::new(context)?),
+            Box::new(crate::system::physics::PhysicsSystem{}),
+            Box::new(crate::system::client::ClientSystem{})
+        ]
+    };
+
+    for system in engine.systems.iter_mut() {
+        system.init(&mut engine.state, context)?;
+    }
+
+    Ok(engine)
+}
+
+pub fn new_server(context: &mut ggez::Context) -> GameResult<Engine> {
+    let mut engine = Engine{
+        state: State{
+            ecs: recs::Ecs::new()
+        },
+        systems: vec![
+            Box::new(crate::system::physics::PhysicsSystem{}),
+            Box::new(crate::system::gorilla::GorillaSystem{})
+        ]
+    };
+
+    for system in engine.systems.iter_mut() {
+        system.init(&mut engine.state, context)?;
+    }
+
+    Ok(engine)
+}
+
+impl Engine {
+
+    pub fn update<TTx, TRx>(
+        &mut self, 
+        context: &mut Context, 
+        tx: &dyn TxChannel<TTx>, 
+        rx: &dyn RxChannel<TRx>) -> ggez::GameResult {
+
+        self.read_network_messages(rx);
 
         for system in self.systems.iter_mut() {
             system.update(&mut self.state, context)?;
@@ -20,10 +69,12 @@ impl EventHandler for Engine {
 
         self.teardown_dead_entities()?;
 
+        self.write_network_messages(tx);
+
         Ok(())
     }
 
-    fn draw(&mut self, context: &mut Context) -> ggez::GameResult {
+    pub fn draw(&mut self, context: &mut Context) -> ggez::GameResult {
 
         for system in self.systems.iter_mut() {
             system.draw(&mut self.state, context)?;
@@ -31,26 +82,27 @@ impl EventHandler for Engine {
 
         Ok(())
     }
-}
 
-impl Engine {
-    pub fn new(context: &mut ggez::Context) -> GameResult<Engine> {
-        let mut engine = Engine{
-            state: State{
-                ecs: recs::Ecs::new()
-            },
-            systems: vec![
-                Box::new(crate::system::render::RenderSystem::new(context)?),
-                Box::new(crate::system::physics::PhysicsSystem{}),
-                Box::new(crate::system::gorilla::GorillaSystem{})
-            ]
-        };
-
-        for system in engine.systems.iter_mut() {
-            system.init(&mut engine.state, context)?;
+    pub fn key_down_event(
+        &mut self,
+        context: &mut Context,
+        keycode: KeyCode,
+        keymod: KeyMods,
+        repeat: bool,
+    ) {
+        for system in self.systems.iter_mut() {
+            system.key_down(&mut self.state, context, keycode, keymod, repeat);
         }
+    }
 
-        Ok(engine)
+    pub fn key_up_event(
+        &mut self, 
+        context: &mut Context, 
+        keycode: KeyCode, 
+        keymod: KeyMods) {
+        for system in self.systems.iter_mut() {
+            system.key_up(&mut self.state, context, keycode, keymod);
+        }
     }
 
     fn teardown_dead_entities(&mut self) -> GameResult {
@@ -83,5 +135,20 @@ impl Engine {
         self.state.ecs.destroy_entity(entity).unwrap();
 
         Ok(())
+    }
+
+    fn read_network_messages<TRx>(&self, rx: &dyn RxChannel<TRx>) {
+        let mut buffer = vec![];
+        rx.dequeue(&mut buffer);
+    
+        for msg in buffer{
+            // let m = msg.clone();
+            let msg_entity = self.state.ecs.create_entity();
+            self.state.ecs.set(msg_entity, msg).unwrap();
+        }
+    }
+
+    fn write_network_messages<TTx>(&self, tx: &dyn TxChannel<TTx>){
+        // TODO
     }
 }

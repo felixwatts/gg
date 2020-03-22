@@ -1,12 +1,45 @@
 use ggez::GameResult;
 use std::collections::VecDeque;
 
+static NEXT_TX_NUM: u32 = 0;
+static NEXT_RX_NUM: u32 = 0;
+
+pub fn client_tx(ecs: &mut recs::Ecs, msg: ClientMsg) {
+    let msg_entity = ecs.create_entity();
+    crate::network::NEXT_TX_NUM += 1;
+    let msg_component = crate::component::ClientMsg{
+        msg,
+        order: crate::network::NEXT_TX_NUM
+    };
+    ecs.set(msg_entity, msg_component);
+}
+
 pub trait TxChannel<TMsg>{
     fn enqueue(&mut self, msg: TMsg) -> GameResult;
 }
 
 pub trait RxChannel<TMsg>{
     fn dequeue(&mut self, buffer: &mut Vec::<TMsg>) -> GameResult;
+}
+
+#[derive(Clone)]
+pub enum Button{
+    One,
+    Two
+}
+
+#[derive(Clone)]
+pub struct ButtonState{
+    button: Button,
+    is_down: bool
+}
+
+#[derive(Clone)]
+pub enum ServerMsg{}
+
+#[derive(Clone)]
+pub enum ClientMsg{
+    ButtonStateChange(ButtonState)
 }
 
 enum SimMsg<T> {

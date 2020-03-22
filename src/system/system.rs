@@ -1,3 +1,5 @@
+use ggez::event::KeyMods;
+use ggez::event::KeyCode;
 use crate::state::State;
 use recs::EntityId;
 use ggez::Context;
@@ -20,4 +22,17 @@ pub trait System {
     fn teardown_entity(&mut self, _: EntityId, _: &mut State) -> GameResult {
         Ok(())
     }
+
+    fn key_down(&mut self,
+        state: &mut State,
+        context: &mut Context,
+        keycode: KeyCode,
+        keymod: KeyMods,
+        repeat: bool) {}
+
+    fn key_up(&mut self,
+        state: &mut State,
+        context: &mut Context,
+        keycode: KeyCode,
+        keymod: KeyMods) {}
 }

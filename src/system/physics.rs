@@ -7,7 +7,6 @@ use crate::state::State;
 use crate::system::system::System;
 
 pub struct PhysicsSystem {
-
 }
 
 impl System for PhysicsSystem {

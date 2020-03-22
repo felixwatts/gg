@@ -49,7 +49,10 @@ impl System for GorillaSystem {
         Ok(())
     }
 
-    fn update(&mut self, state: &mut State, context: &Context) -> GameResult {
+    fn update(
+        &mut self, 
+        state: &mut State, 
+        context: &Context) -> GameResult {
         let mut ids: Vec<EntityId> = Vec::new();
         let filter = component_filter!(Gorilla, Body);
         state.ecs.collect_with(&filter, &mut ids);
