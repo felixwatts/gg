@@ -72,7 +72,7 @@ impl System for ClientSystem {
 
         // read all network entities
 
-        let msgs = state.ecs.get::<RxQueue<ServerMsg>>(state.rx_queue).unwrap();
+        let msgs = state.ecs.get::<RxQueue<ServerMsg>>(state.rx_queue.unwrap()).unwrap();
         for msg in msgs.0 {
             match msg {
                 ServerMsg::SetBody(server_id, body) => {

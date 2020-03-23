@@ -1,3 +1,4 @@
+use crate::network::NoMsg;
 use std::marker::PhantomData;
 use crate::network::ServerMsg;
 use crate::network::ClientMsg;
@@ -21,6 +22,30 @@ pub struct Engine<TTx, TRx>{
     phantom2: PhantomData<TRx>
 }
 
+pub fn new_local(context: &mut ggez::Context) -> GameResult<Engine<NoMsg, NoMsg>> {
+
+    let mut engine = Engine::<NoMsg, NoMsg>{
+        state: State{
+            ecs: recs::Ecs::new(),
+            tx_queue: None,
+            rx_queue: None,
+        },
+        systems: vec![
+            Box::new(crate::system::gorilla::GorillaSystem{}),
+            Box::new(crate::system::physics::PhysicsSystem{}),
+            Box::new(crate::system::render::RenderSystem::new(context)?),
+        ],
+        phantom1: PhantomData{},
+        phantom2: PhantomData{}
+    };
+
+    for system in engine.systems.iter_mut() {
+        system.init(&mut engine.state, context)?;
+    }
+
+    Ok(engine)
+}
+
 pub fn new_client(context: &mut ggez::Context) -> GameResult<Engine<ClientMsg, ServerMsg>> {
 
     let mut ecs = recs::Ecs::new();
@@ -34,8 +59,8 @@ pub fn new_client(context: &mut ggez::Context) -> GameResult<Engine<ClientMsg, S
     let mut engine = Engine::<ClientMsg, ServerMsg>{
         state: State{
             ecs,
-            tx_queue,
-            rx_queue,
+            tx_queue: Some(tx_queue),
+            rx_queue: Some(rx_queue),
         },
         systems: vec![
             Box::new(crate::system::client::ClientSystem::new()),
@@ -65,16 +90,13 @@ pub fn new_server(context: &mut ggez::Context) -> GameResult<Engine<ServerMsg, C
     let mut engine = Engine::<ServerMsg, ClientMsg>{
         state: State{
             ecs,
-            tx_queue,
-            rx_queue
+            tx_queue: Some(tx_queue),
+            rx_queue: Some(rx_queue)
         },
         systems: vec![
             Box::new(crate::system::server::ServerSystem{}),
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::gorilla::GorillaSystem{}),
-            
-            // temp for debugging
-            // Box::new(crate::system::render::RenderSystem::new(context)?),
         ],
         phantom1: PhantomData{},
         phantom2: PhantomData{}
@@ -172,18 +194,22 @@ impl<TTx, TRx> Engine<TTx, TRx> where TRx: 'static, TTx: 'static {
     }
 
     fn read_network_messages(&mut self, rx: &mut dyn RxChannel<TRx>) -> GameResult {
-        let mut buffer = vec![];
-        rx.dequeue(&mut buffer)?;
-
-        self.state.ecs.set(self.state.rx_queue, RxQueue(buffer)).unwrap();
+        if let Some(rx_queue) = self.state.rx_queue {
+            let mut buffer = vec![];
+            rx.dequeue(&mut buffer)?;
+    
+            self.state.ecs.set(rx_queue, RxQueue(buffer)).unwrap();
+        }
 
         Ok(())
     }
 
     fn write_network_messages(&mut self, tx: &mut dyn TxChannel<TTx>)-> GameResult {
-        let to_tx = self.state.ecs.set(self.state.tx_queue, TxQueue(vec![])).unwrap().unwrap();
-        for msg in to_tx.0 {
-            tx.enqueue(msg)?;
+        if let Some(tx_queue) = self.state.tx_queue {
+            let to_tx = self.state.ecs.set(tx_queue, TxQueue(vec![])).unwrap().unwrap();
+            for msg in to_tx.0 {
+                tx.enqueue(msg)?;
+            }
         }
 
         Ok(())

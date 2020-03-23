@@ -15,10 +15,10 @@ pub struct LocalClientServer{
 }
 
 impl LocalClientServer{
-    pub fn new(context: &mut ggez::Context) -> LocalClientServer{
+    pub fn new(context: &mut ggez::Context, latency: u32) -> LocalClientServer{
 
-        let client_server_channel = SimChannel::<ClientMsg>::new(2u32);
-        let server_client_channel = SimChannel::<ServerMsg>::new(2u32);
+        let client_server_channel = SimChannel::<ClientMsg>::new(latency);
+        let server_client_channel = SimChannel::<ServerMsg>::new(latency);
 
         let client_engine = crate::engine::new_client(context).unwrap();
         let server_engine = crate::engine::new_server(context).unwrap();
@@ -50,7 +50,6 @@ impl EventHandler for LocalClientServer {
 
     fn draw(&mut self, context: &mut Context) -> ggez::GameResult {
 
-        self.server_engine.draw(context)?;
         self.client_engine.draw(context)?;
 
         Ok(())

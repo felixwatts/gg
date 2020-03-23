@@ -1,3 +1,5 @@
+use ggez::event::KeyMods;
+use ggez::event::KeyCode;
 use crate::component::Network;
 use crate::component::Anchor;
 use crate::state::State;
@@ -33,6 +35,24 @@ pub fn spawn_anchor(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GameResult<Entity
     ecs.set(anchor, Network).unwrap();
 
     Ok(anchor)
+}
+
+fn update_button_state(keycode: KeyCode, state: &mut State, context: &Context) {
+    match keycode {
+        KeyCode::Space | KeyCode::Return => {
+            let mut gorillas = vec![];
+            state.ecs.collect_with(&component_filter!(Gorilla), &mut gorillas);
+            // TODO find the right player
+            if let Some(&gorilla) = gorillas.first() {
+                let button_state = [
+                    ggez::input::keyboard::is_key_pressed(context, KeyCode::Space),
+                    ggez::input::keyboard::is_key_pressed(context, KeyCode::Return)
+                ];
+                state.ecs.set(gorilla, Gorilla{button_state}).unwrap();
+            } 
+        },
+        _ => {}
+    }
 }
 
 impl System for GorillaSystem {
@@ -90,6 +110,24 @@ impl System for GorillaSystem {
         }
         Ok(())
     }
+
+    fn key_down(&mut self,
+        state: &mut State,
+        context: &mut Context,
+        keycode: KeyCode,
+        _: KeyMods,
+        _: bool) {
+            update_button_state(keycode, state, context);
+
+        }
+
+    fn key_up(&mut self,
+        state: &mut State,
+        context: &mut Context,
+        keycode: KeyCode,
+        _: KeyMods) {
+            update_button_state(keycode, state, context);
+        }
 }
 
 impl GorillaSystem {

@@ -7,7 +7,7 @@ use ggez::GameResult;
 use std::collections::VecDeque;
 
 pub fn tx<TMsg>(state: &mut State, msg: TMsg) where TMsg: 'static {
-    state.ecs.borrow_mut::<TxQueue<TMsg>>(state.tx_queue).unwrap().0.push(msg);
+    state.ecs.borrow_mut::<TxQueue<TMsg>>(state.tx_queue.unwrap()).unwrap().0.push(msg);
 }
 
 pub trait TxChannel<TMsg>{
@@ -16,6 +16,20 @@ pub trait TxChannel<TMsg>{
 
 pub trait RxChannel<TMsg>{
     fn dequeue(&mut self, buffer: &mut Vec::<TMsg>) -> GameResult;
+}
+
+pub struct DummyChannel{}
+
+impl<TMsg> TxChannel<TMsg> for DummyChannel {
+    fn enqueue(&mut self, _: TMsg) -> GameResult{
+        panic!("cannot enqueue on DummyChannel");
+    }
+}
+
+impl<TMsg> RxChannel<TMsg> for DummyChannel {
+    fn dequeue(&mut self, _: &mut Vec::<TMsg>) -> GameResult{
+        panic!("cannot dequeue from DummyChannel");
+    }
 }
 
 #[derive(Clone)]
@@ -29,6 +43,10 @@ pub enum ServerMsg{
 #[derive(Clone)]
 pub enum ClientMsg{
     ButtonStateChange([bool; 2])
+}
+
+#[derive(Clone)]
+pub enum NoMsg{
 }
 
 enum SimMsg<T> {

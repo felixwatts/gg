@@ -19,7 +19,7 @@ impl System for ServerSystem {
         // read and apply user input messages from clients
 
         // TODO try to avoid this copy of the whole vector
-        let msgs = state.ecs.get::<RxQueue<ClientMsg>>(state.rx_queue).unwrap();
+        let msgs = state.ecs.get::<RxQueue<ClientMsg>>(state.rx_queue.unwrap()).unwrap();
         for msg in msgs.0.iter() {
             match msg {
                 ClientMsg::ButtonStateChange(m) => {
