@@ -1,4 +1,4 @@
-use crate::network::NoMsg;
+use crate::network::dummy::NoMsg;
 use std::marker::PhantomData;
 use crate::network::ServerMsg;
 use crate::network::ClientMsg;

@@ -1,71 +1,9 @@
-use std::marker::PhantomData;
-use crate::component::Sprite;
-use crate::component::body::Body;
-use recs::EntityId;
-use crate::component::TxQueue;
-use crate::state::State;
+use crate::network::ServerMsg;
+use crate::network::ClientMsg;
+use crate::network::RxChannel;
+use crate::network::TxChannel;
 use ggez::GameResult;
 use std::collections::VecDeque;
-
-pub fn tx<TMsg>(state: &mut State, msg: TMsg) where TMsg: 'static {
-    state.ecs.borrow_mut::<TxQueue<TMsg>>(state.tx_queue.unwrap()).unwrap().0.push(msg);
-}
-
-pub trait TxChannel<TMsg>{
-    fn enqueue(&mut self, msg: TMsg) -> GameResult;
-}
-
-pub trait RxChannel<TMsg>{
-    fn dequeue(&mut self, buffer: &mut Vec::<TMsg>) -> GameResult;
-}
-
-pub struct DummyChannel{}
-
-impl<TMsg> TxChannel<TMsg> for DummyChannel {
-    fn enqueue(&mut self, _: TMsg) -> GameResult{
-        panic!("cannot enqueue on DummyChannel");
-    }
-}
-
-impl<TMsg> RxChannel<TMsg> for DummyChannel {
-    fn dequeue(&mut self, _: &mut Vec::<TMsg>) -> GameResult{
-        panic!("cannot dequeue from DummyChannel");
-    }
-}
-
-pub struct NetworkChannel<TTx, TRx>{
-    pub phantom1: PhantomData<TTx>,
-    pub phantom2: PhantomData<TRx>,
-}
-
-impl<TTx, TRx> TxChannel<TTx> for NetworkChannel<TTx, TRx> {
-    fn enqueue(&mut self, _: TTx) -> GameResult{
-        unimplemented!();
-    }
-}
-
-impl<TTx, TRx> RxChannel<TRx> for NetworkChannel<TTx, TRx> {
-    fn dequeue(&mut self, _: &mut Vec::<TRx>) -> GameResult{
-        unimplemented!();
-    }
-}
-
-#[derive(Clone)]
-pub enum ServerMsg{
-    Kill(EntityId),
-    SetBody(EntityId, Body),
-    SetSprite(EntityId, Sprite),
-    SetFocus(EntityId)
-}
-
-#[derive(Clone)]
-pub enum ClientMsg{
-    ButtonStateChange([bool; 2])
-}
-
-#[derive(Clone)]
-pub enum NoMsg{
-}
 
 enum SimMsg<T> {
     Msg(T),

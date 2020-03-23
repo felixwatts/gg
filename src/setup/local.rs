@@ -1,5 +1,5 @@
-use crate::network::NoMsg;
-use crate::network::DummyChannel;
+use crate::network::dummy::NoMsg;
+use crate::network::dummy::DummyChannel;
 use ggez::event::KeyMods;
 use ggez::event::KeyCode;
 use ggez::Context;

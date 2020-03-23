@@ -1,4 +1,4 @@
-use crate::network::SimNetwork;
+use crate::network::sim::SimNetwork;
 use ggez::event::KeyMods;
 use ggez::event::KeyCode;
 use ggez::Context;

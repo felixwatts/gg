@@ -1,6 +1,6 @@
 use ggez::GameResult;
 use std::marker::PhantomData;
-use crate::network::NetworkChannel;
+use crate::network::real::NetworkChannel;
 use crate::network::ClientMsg;
 use crate::network::ServerMsg;
 use ggez::Context;
