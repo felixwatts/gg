@@ -111,13 +111,12 @@ pub fn new_server(context: &mut ggez::Context) -> GameResult<Engine<ServerMsg, C
 
 impl<TTx, TRx> Engine<TTx, TRx> where TRx: 'static, TTx: 'static {
 
-    pub fn update (
+    pub fn update<TNetwork> (
         &mut self, 
         context: &mut Context, 
-        tx: &mut dyn TxChannel<TTx>, 
-        rx: &mut dyn RxChannel<TRx>) -> ggez::GameResult {
+        network: &mut TNetwork) -> ggez::GameResult where TNetwork: TxChannel<TTx> + RxChannel<TRx> {
 
-        self.read_network_messages(rx)?;
+        self.read_network_messages(network)?;
 
         for system in self.systems.iter_mut() {
             system.update(&mut self.state, context)?;
@@ -125,7 +124,7 @@ impl<TTx, TRx> Engine<TTx, TRx> where TRx: 'static, TTx: 'static {
 
         self.teardown_dead_entities()?;
 
-        self.write_network_messages(tx)?;
+        self.write_network_messages(network)?;
 
         Ok(())
     }

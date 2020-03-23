@@ -1,7 +1,12 @@
-pub mod local;
-pub mod local_client_server;
+mod local;
+mod local_client_server;
+mod server;
+mod client;
 
-use crate::setup::local_client_server::LocalClientServer;
+use crate::setup::client::ClientSetup;
+use crate::setup::server::ServerSetup;
+use crate::setup::local::LocalSetup;
+use crate::setup::local_client_server::LocalClientServerSetup;
 use ggez::GameResult;
 use std::env;
 use std::path;
@@ -16,27 +21,51 @@ pub struct Setup<TSetup> where TSetup: EventHandler {
     game: TSetup,
 }
 
-pub fn new_local() -> GameResult<Setup<LocalClientServer>> {
+pub fn new_server() -> GameResult<Setup<ServerSetup>>{
     let (mut context, event_loop) = build_context()?;
 
-    let local_client_server = LocalClientServer::new(&mut context, 0u32);
+    let setup = ServerSetup::new(&mut context);
 
     Ok(Setup{
         context: context,
         event_loop: event_loop,
-        game: local_client_server
+        game: setup
     })
 }
 
-pub fn new_local_client_server(latency: u32) -> GameResult<Setup<LocalClientServer>> {
+pub fn new_client() -> GameResult<Setup<ClientSetup>>{
     let (mut context, event_loop) = build_context()?;
 
-    let local_client_server = LocalClientServer::new(&mut context, latency);
+    let setup = ClientSetup::new(&mut context);
 
     Ok(Setup{
         context: context,
         event_loop: event_loop,
-        game: local_client_server
+        game: setup
+    })
+}
+
+pub fn new_local() -> GameResult<Setup<LocalSetup>> {
+    let (mut context, event_loop) = build_context()?;
+
+    let setup = LocalSetup::new(&mut context);
+
+    Ok(Setup{
+        context: context,
+        event_loop: event_loop,
+        game: setup
+    })
+}
+
+pub fn new_local_client_server(latency: u32) -> GameResult<Setup<LocalClientServerSetup>> {
+    let (mut context, event_loop) = build_context()?;
+
+    let setup = LocalClientServerSetup::new(&mut context, latency);
+
+    Ok(Setup{
+        context: context,
+        event_loop: event_loop,
+        game: setup
     })
 }
 

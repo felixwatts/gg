@@ -20,7 +20,7 @@ impl LocalSetup{
 
 impl EventHandler for LocalSetup {
     fn update(&mut self, context: &mut Context) -> ggez::GameResult {
-        self.engine.update(context, &mut DummyChannel{}, &mut DummyChannel{})?;
+        self.engine.update(context, &mut DummyChannel{})?;
         Ok(())
     }
 

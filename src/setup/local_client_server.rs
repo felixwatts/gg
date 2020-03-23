@@ -1,49 +1,39 @@
+use crate::network::SimNetwork;
 use ggez::event::KeyMods;
 use ggez::event::KeyCode;
 use ggez::Context;
 use ggez::event::EventHandler;
-use crate::network::SimChannel;
 use crate::network::ServerMsg;
 use crate::network::ClientMsg;
 use crate::engine::Engine;
 
-pub struct LocalClientServer{
+pub struct LocalClientServerSetup{
     client_engine: Engine<ClientMsg, ServerMsg>,
     server_engine: Engine<ServerMsg, ClientMsg>,
-    client_server_channel: SimChannel<ClientMsg>,
-    server_client_channel: SimChannel<ServerMsg>,
+    network: SimNetwork,
 }
 
-impl LocalClientServer{
-    pub fn new(context: &mut ggez::Context, latency: u32) -> LocalClientServer{
-
-        let client_server_channel = SimChannel::<ClientMsg>::new(latency);
-        let server_client_channel = SimChannel::<ServerMsg>::new(latency);
+impl LocalClientServerSetup{
+    pub fn new(context: &mut ggez::Context, latency: u32) -> LocalClientServerSetup{
 
         let client_engine = crate::engine::new_client(context).unwrap();
         let server_engine = crate::engine::new_server(context).unwrap();
 
-        LocalClientServer{
+        LocalClientServerSetup{
             client_engine: client_engine,
             server_engine: server_engine,
-            client_server_channel: client_server_channel,
-            server_client_channel: server_client_channel
+            network: SimNetwork::new(latency)
         }
-    }
-
-    pub fn step(&mut self) {
-        self.client_server_channel.step();
-        self.server_client_channel.step();
     }
 }
 
-impl EventHandler for LocalClientServer {
+impl EventHandler for LocalClientServerSetup {
     fn update(&mut self, context: &mut Context) -> ggez::GameResult {
 
-        self.step();
+        self.network.step();
 
-        self.client_engine.update(context, &mut self.client_server_channel, &mut self.server_client_channel)?;
-        self.server_engine.update(context, &mut self.server_client_channel, &mut self.client_server_channel)?; 
+        self.client_engine.update(context, &mut self.network)?;
+        self.server_engine.update(context, &mut self.network)?; 
 
         Ok(())
     }

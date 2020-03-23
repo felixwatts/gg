@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 use crate::component::Sprite;
 use crate::component::body::Body;
 use recs::EntityId;
@@ -29,6 +30,23 @@ impl<TMsg> TxChannel<TMsg> for DummyChannel {
 impl<TMsg> RxChannel<TMsg> for DummyChannel {
     fn dequeue(&mut self, _: &mut Vec::<TMsg>) -> GameResult{
         panic!("cannot dequeue from DummyChannel");
+    }
+}
+
+pub struct NetworkChannel<TTx, TRx>{
+    pub phantom1: PhantomData<TTx>,
+    pub phantom2: PhantomData<TRx>,
+}
+
+impl<TTx, TRx> TxChannel<TTx> for NetworkChannel<TTx, TRx> {
+    fn enqueue(&mut self, _: TTx) -> GameResult{
+        unimplemented!();
+    }
+}
+
+impl<TTx, TRx> RxChannel<TRx> for NetworkChannel<TTx, TRx> {
+    fn dequeue(&mut self, _: &mut Vec::<TRx>) -> GameResult{
+        unimplemented!();
     }
 }
 
@@ -136,6 +154,49 @@ impl<TMsg> RxChannel<TMsg> for SimChannel<TMsg> {
         self.needs_dequeue_before_step = false;
 
         Ok(())
+    }
+}
+
+pub struct SimNetwork{
+    up_channel: SimChannel<ClientMsg>,
+    down_channel: SimChannel<ServerMsg>
+}
+
+impl SimNetwork{
+    pub fn new(latency: u32) -> SimNetwork{
+        SimNetwork{
+            up_channel: SimChannel::<ClientMsg>::new(latency),
+            down_channel: SimChannel::<ServerMsg>::new(latency)
+        }
+    }
+
+    pub fn step(&mut self){
+        self.up_channel.step();
+        self.down_channel.step();
+    }
+}
+
+impl TxChannel<ServerMsg> for SimNetwork {
+    fn enqueue(&mut self, msg: ServerMsg) -> GameResult {
+        self.down_channel.enqueue(msg)
+    }
+}
+
+impl TxChannel<ClientMsg> for SimNetwork {
+    fn enqueue(&mut self, msg: ClientMsg) -> GameResult {
+        self.up_channel.enqueue(msg)
+    }
+}
+
+impl RxChannel<ServerMsg> for SimNetwork {
+    fn dequeue(&mut self, buffer: &mut Vec::<ServerMsg>) -> GameResult {
+        self.down_channel.dequeue(buffer)
+    }
+}
+
+impl RxChannel<ClientMsg> for SimNetwork {
+    fn dequeue(&mut self, buffer: &mut Vec::<ClientMsg>) -> GameResult {
+        self.up_channel.dequeue(buffer)
     }
 }
 
