@@ -35,6 +35,10 @@ impl RadialBody {
         let accel = self.accel_along_tangent();
         self.loc += (self.vel + (accel * duration / 2.0)) * duration;
         self.vel += accel * duration;
+
+        // for some reason a small amount of damping is neccessary here to
+        // stop velocity increasing continuously while swinging
+        self.vel *= 1.0 - (0.1 * duration);
     }
 
     pub fn to_planar(&self) -> PlanarBody {
@@ -176,6 +180,7 @@ fn test_update() {
 }
 
 #[cfg(test)]
+// expected vel should be without damping, damping factor will be accounted for inside this fn
 fn expect_update(radius: f32, loc: f32, vel: f32, ax: f32, ay: f32, t: f32, exp_loc: f32, exp_vel: f32) {
     let mut subject = RadialBody{
         origin: Vector2::<f32>::zeros(),
@@ -191,7 +196,7 @@ fn expect_update(radius: f32, loc: f32, vel: f32, ax: f32, ay: f32, t: f32, exp_
     assert_eq!(Vector2::<f32>::new(ax, ay), subject.accel);
     assert_eq!(radius, subject.radius);
     assert_roughly_eq(exp_loc, subject.loc);
-    assert_roughly_eq(exp_vel, subject.vel);
+    assert_roughly_eq(exp_vel * (1.0 - (0.1 * t)), subject.vel);
 }
 
 #[test]
