@@ -1,7 +1,7 @@
 use crate::component::Sprite;
 use crate::component::body::Body;
 use recs::EntityId;
-use ggez::GameResult;
+use crate::err::GgResult;
 use ggez::Context;
 use crate::state::State;
 use crate::system::system::System;
@@ -9,8 +9,12 @@ use crate::system::system::System;
 pub struct PhysicsSystem {
 }
 
-impl System for PhysicsSystem {
-    fn update(&mut self, state: &mut State, context: &Context) -> GameResult {
+impl<TNetwork> System<TNetwork> for PhysicsSystem {
+    fn update(
+        &mut self, 
+        state: &mut State, 
+        context: &Context,
+        _: &mut TNetwork) -> GgResult {
         let mut ids: Vec<EntityId> = Vec::new();
         let filter = component_filter!(Body);
         state.ecs.collect_with(&filter, &mut ids);
@@ -31,7 +35,7 @@ impl System for PhysicsSystem {
         Ok(())
     }
 
-    fn teardown_entity(&mut self, _: EntityId, _: &mut State) -> GameResult {
+    fn teardown_entity(&mut self, _: EntityId, _: &mut State) -> GgResult {
         Ok(())
     }
 }

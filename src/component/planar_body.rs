@@ -1,7 +1,10 @@
 use crate::component::radial_body::RadialBody;
 use nalgebra::Vector2;
+use serde::{Serialize, Deserialize};
 
 #[derive(Clone)]
+#[derive(Deserialize)]
+#[derive(Serialize)]
 pub struct PlanarBody {
     pub loc: Vector2<f32>,
     pub vel: Vector2<f32>,

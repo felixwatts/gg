@@ -1,8 +1,11 @@
 use nalgebra::Vector2;
 use crate::component::radial_body::RadialBody;
 use crate::component::planar_body::PlanarBody;
+use serde::{Serialize, Deserialize};
 
 #[derive(Clone)]
+#[derive(Deserialize)]
+#[derive(Serialize)]
 pub enum Body {
     Planar(PlanarBody),
     Radial(RadialBody)

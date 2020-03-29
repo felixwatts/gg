@@ -1,5 +1,5 @@
-use crate::network::dummy::NoMsg;
-use crate::network::dummy::DummyChannel;
+use ggez::GameResult;
+use crate::network::NoNetwork;
 use ggez::event::KeyMods;
 use ggez::event::KeyCode;
 use ggez::Context;
@@ -7,7 +7,7 @@ use ggez::event::EventHandler;
 use crate::engine::Engine;
 
 pub struct LocalSetup{
-    engine: Engine<NoMsg, NoMsg>
+    engine: Engine<NoNetwork>
 }
 
 impl LocalSetup{
@@ -19,12 +19,12 @@ impl LocalSetup{
 }
 
 impl EventHandler for LocalSetup {
-    fn update(&mut self, context: &mut Context) -> ggez::GameResult {
-        self.engine.update(context, &mut DummyChannel{})?;
+    fn update(&mut self, context: &mut Context) -> GameResult {
+        self.engine.update(context, &mut NoNetwork{})?;
         Ok(())
     }
 
-    fn draw(&mut self, context: &mut Context) -> ggez::GameResult {
+    fn draw(&mut self, context: &mut Context) -> GameResult {
         self.engine.draw(context)?;
         Ok(())
     }
@@ -36,10 +36,10 @@ impl EventHandler for LocalSetup {
         keymod: KeyMods,
         repeat: bool,
     ) {
-        self.engine.key_down_event(context, keycode, keymod, repeat);
+        self.engine.key_down_event(context, &mut NoNetwork{}, keycode, keymod, repeat);
     }
 
     fn key_up_event(&mut self, context: &mut Context, keycode: KeyCode, keymod: KeyMods) {
-        self.engine.key_up_event(context, keycode, keymod);
+        self.engine.key_up_event(context, &mut NoNetwork{}, keycode, keymod);
     }
 }

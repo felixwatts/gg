@@ -1,4 +1,4 @@
-use ggez::GameResult;
+use crate::err::GgResult;
 use std::marker::PhantomData;
 use crate::network::real::NetworkChannel;
 use crate::network::ClientMsg;
@@ -8,7 +8,7 @@ use ggez::event::EventHandler;
 use crate::engine::Engine;
 
 pub struct ServerSetup{
-    engine: Engine<ServerMsg, ClientMsg>,
+    engine: Engine<NetworkChannel<ServerMsg, ClientMsg>>,
     network: NetworkChannel<ServerMsg, ClientMsg>
 }
 
@@ -30,7 +30,7 @@ impl EventHandler for ServerSetup {
         Ok(())
     }
 
-    fn draw(&mut self, _ctx: &mut Context) -> GameResult{
+    fn draw(&mut self, _ctx: &mut Context) -> ggez::GameResult{
         Ok(())
     }
 }

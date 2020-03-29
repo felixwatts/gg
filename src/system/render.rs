@@ -6,15 +6,15 @@ use crate::system::system::System;
 use recs::{Ecs, EntityId};
 use ggez::graphics::spritebatch::SpriteBatch;
 use ggez::Context;
-use ggez::GameResult;
+use crate::err::GgResult;
 use ggez::graphics;
 
 pub struct RenderSystem {
     sprite_batch: SpriteBatch,
 }
 
-impl System for RenderSystem {
-    fn draw(&mut self, state: &State, context: &mut Context) -> GameResult {
+impl<TNetwork> System<TNetwork> for RenderSystem {
+    fn draw(&mut self, state: &State, context: &mut Context) -> GgResult {
         self.set_focus(state, context)?;
         graphics::clear(context, [0.0, 0.0, 0.0, 1.0].into());
         self.draw_sprites(state, context)?;
@@ -35,14 +35,14 @@ fn entity_to_draw_param(entity: EntityId, ecs: &Ecs) -> DrawParam {
 }
 
 impl RenderSystem {
-    pub fn new(context: &mut Context) -> GameResult<RenderSystem> {
+    pub fn new(context: &mut Context) -> GgResult<RenderSystem> {
         let gfx = ggez::graphics::Image::new(context, "/1px.png")?;
         Ok(RenderSystem {
             sprite_batch: SpriteBatch::new(gfx)
         })
     }
 
-    fn draw_sprites(&mut self, state: &State, context: &mut Context) -> GameResult {
+    fn draw_sprites(&mut self, state: &State, context: &mut Context) -> GgResult {
         self.sprite_batch.clear();
 
         let mut sprite_entities = vec![];
@@ -58,7 +58,7 @@ impl RenderSystem {
         Ok(())
     }
 
-    fn set_focus(&mut self, state: &State, context: &mut Context) -> ggez::GameResult {
+    fn set_focus(&mut self, state: &State, context: &mut Context) -> GgResult {
         let mut focus_entities = vec![];
         state.ecs.collect_with(&component_filter!(Focus), &mut focus_entities);
         if let Some(&focus_entity) = focus_entities.first() {
@@ -71,10 +71,10 @@ impl RenderSystem {
                     12.0, 
                     -9.0
                 );
-                return graphics::set_screen_coordinates(
+                graphics::set_screen_coordinates(
                     context, 
                     screen_rect
-                );
+                )?;
             }
         }
 

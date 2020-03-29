@@ -1,4 +1,3 @@
-use ggez::GameResult;
 use std::marker::PhantomData;
 use crate::network::real::NetworkChannel;
 use crate::network::ClientMsg;
@@ -6,9 +5,10 @@ use crate::network::ServerMsg;
 use ggez::Context;
 use ggez::event::EventHandler;
 use crate::engine::Engine;
+use ggez::GameResult;
 
 pub struct ClientSetup{
-    engine: Engine<ClientMsg, ServerMsg>,
+    engine: Engine<NetworkChannel<ClientMsg, ServerMsg>>,
     network: NetworkChannel<ClientMsg, ServerMsg>
 }
 
@@ -25,7 +25,7 @@ impl ClientSetup{
 }
 
 impl EventHandler for ClientSetup {
-    fn update(&mut self, context: &mut Context) -> ggez::GameResult {
+    fn update(&mut self, context: &mut Context) -> GameResult {
         self.engine.update(context, &mut self.network)?;
         Ok(())
     }

@@ -2,7 +2,7 @@ use crate::network::ServerMsg;
 use crate::network::ClientMsg;
 use crate::network::RxChannel;
 use crate::network::TxChannel;
-use ggez::GameResult;
+use crate::err::GgResult;
 use std::collections::VecDeque;
 
 enum SimMsg<T> {
@@ -47,7 +47,7 @@ impl<TMsg> SimChannel<TMsg> {
 }
 
 impl<TMsg> TxChannel<TMsg> for SimChannel<TMsg> {
-    fn enqueue(&mut self, msg: TMsg) -> GameResult {
+    fn enqueue(&mut self, msg: TMsg) -> GgResult {
         self.queue.push_back(SimMsg::<TMsg>::Delay(self.delay_write));
         self.queue.push_back(SimMsg::<TMsg>::Msg(msg));
         self.delay_write = 0;
@@ -56,7 +56,7 @@ impl<TMsg> TxChannel<TMsg> for SimChannel<TMsg> {
 }
 
 impl<TMsg> RxChannel<TMsg> for SimChannel<TMsg> {
-    fn dequeue(&mut self, buffer: &mut Vec::<TMsg>) -> GameResult {
+    fn dequeue(&mut self, buffer: &mut Vec::<TMsg>) -> GgResult {
         buffer.clear();
 
         // loop until there are no more messages to read
@@ -115,25 +115,25 @@ impl SimNetwork{
 }
 
 impl TxChannel<ServerMsg> for SimNetwork {
-    fn enqueue(&mut self, msg: ServerMsg) -> GameResult {
+    fn enqueue(&mut self, msg: ServerMsg) -> GgResult {
         self.down_channel.enqueue(msg)
     }
 }
 
 impl TxChannel<ClientMsg> for SimNetwork {
-    fn enqueue(&mut self, msg: ClientMsg) -> GameResult {
+    fn enqueue(&mut self, msg: ClientMsg) -> GgResult {
         self.up_channel.enqueue(msg)
     }
 }
 
 impl RxChannel<ServerMsg> for SimNetwork {
-    fn dequeue(&mut self, buffer: &mut Vec::<ServerMsg>) -> GameResult {
+    fn dequeue(&mut self, buffer: &mut Vec::<ServerMsg>) -> GgResult {
         self.down_channel.dequeue(buffer)
     }
 }
 
 impl RxChannel<ClientMsg> for SimNetwork {
-    fn dequeue(&mut self, buffer: &mut Vec::<ClientMsg>) -> GameResult {
+    fn dequeue(&mut self, buffer: &mut Vec::<ClientMsg>) -> GgResult {
         self.up_channel.dequeue(buffer)
     }
 }

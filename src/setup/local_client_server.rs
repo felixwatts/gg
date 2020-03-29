@@ -3,13 +3,12 @@ use ggez::event::KeyMods;
 use ggez::event::KeyCode;
 use ggez::Context;
 use ggez::event::EventHandler;
-use crate::network::ServerMsg;
-use crate::network::ClientMsg;
 use crate::engine::Engine;
+use ggez::GameResult;
 
 pub struct LocalClientServerSetup{
-    client_engine: Engine<ClientMsg, ServerMsg>,
-    server_engine: Engine<ServerMsg, ClientMsg>,
+    client_engine: Engine<SimNetwork>,
+    server_engine: Engine<SimNetwork>,
     network: SimNetwork,
 }
 
@@ -28,7 +27,7 @@ impl LocalClientServerSetup{
 }
 
 impl EventHandler for LocalClientServerSetup {
-    fn update(&mut self, context: &mut Context) -> ggez::GameResult {
+    fn update(&mut self, context: &mut Context) -> GameResult {
 
         self.network.step();
 
@@ -38,7 +37,7 @@ impl EventHandler for LocalClientServerSetup {
         Ok(())
     }
 
-    fn draw(&mut self, context: &mut Context) -> ggez::GameResult {
+    fn draw(&mut self, context: &mut Context) -> GameResult {
 
         self.client_engine.draw(context)?;
 
@@ -52,10 +51,10 @@ impl EventHandler for LocalClientServerSetup {
         keymod: KeyMods,
         repeat: bool,
     ) {
-        self.client_engine.key_down_event(context, keycode, keymod, repeat);
+        self.client_engine.key_down_event(context, &mut self.network, keycode, keymod, repeat);
     }
 
     fn key_up_event(&mut self, context: &mut Context, keycode: KeyCode, keymod: KeyMods) {
-        self.client_engine.key_up_event(context, keycode, keymod);
+        self.client_engine.key_up_event(context, &mut self.network, keycode, keymod);
     }
 }

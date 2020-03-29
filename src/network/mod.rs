@@ -1,35 +1,36 @@
-pub mod dummy;
 pub mod sim;
 pub mod real;
+pub mod server;
 
 use crate::component::Sprite;
 use crate::component::body::Body;
-use recs::EntityId;
-use crate::component::TxQueue;
-use crate::state::State;
-use ggez::GameResult;
+use crate::err::GgResult;
+use serde::Serialize;
+use serde::Deserialize;
 
-pub fn tx<TMsg>(state: &mut State, msg: TMsg) where TMsg: 'static {
-    state.ecs.borrow_mut::<TxQueue<TMsg>>(state.tx_queue.unwrap()).unwrap().0.push(msg);
-}
+pub struct NoNetwork{}
 
 pub trait TxChannel<TMsg>{
-    fn enqueue(&mut self, msg: TMsg) -> GameResult;
+    fn enqueue(&mut self, msg: TMsg) -> GgResult;
 }
 
 pub trait RxChannel<TMsg>{
-    fn dequeue(&mut self, buffer: &mut Vec::<TMsg>) -> GameResult;
+    fn dequeue(&mut self, buffer: &mut Vec::<TMsg>) -> GgResult;
 }
 
 #[derive(Clone)]
+#[derive(Deserialize)]
+#[derive(Serialize)]
 pub enum ServerMsg{
-    Kill(EntityId),
-    SetBody(EntityId, Body),
-    SetSprite(EntityId, Sprite),
-    SetFocus(EntityId)
+    Kill(u64),
+    SetBody(u64, Body),
+    SetSprite(u64, Sprite),
+    SetFocus(u64)
 }
 
 #[derive(Clone)]
+#[derive(Deserialize)]
+#[derive(Serialize)]
 pub enum ClientMsg{
     ButtonStateChange([bool; 2])
 }

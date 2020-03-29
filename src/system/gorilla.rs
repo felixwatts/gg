@@ -11,12 +11,12 @@ use crate::entity::*;
 use crate::component::Dead;
 use crate::component::Gorilla;
 use crate::component::body::Body;
-use ggez::GameResult;
+use crate::err::GgResult;
 use recs::EntityId;
 
 pub struct GorillaSystem {}
 
-pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GameResult<EntityId> {
+pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GgResult<EntityId> {
     let gorilla = ecs.create_entity();
     with_sprite(ecs, gorilla, [1.0, 0.0, 0.0, 1.0], [0.3, 0.3].into())?;
     ecs.set(gorilla, Focus).unwrap();
@@ -27,7 +27,7 @@ pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GameResult<Entit
     Ok(gorilla)
 }
 
-pub fn spawn_anchor(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GameResult<EntityId> {
+pub fn spawn_anchor(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GgResult<EntityId> {
     let anchor = ecs.create_entity();
     ecs.set(anchor, Anchor).unwrap();
     ecs.set(anchor, Body::new(loc, Vector2::zeros(), Vector2::zeros())).unwrap();
@@ -55,8 +55,8 @@ fn update_button_state(keycode: KeyCode, state: &mut State, context: &Context) {
     }
 }
 
-impl System for GorillaSystem {
-    fn init(&mut self, state: &mut State, _: &Context) -> GameResult {
+impl<TNetwork> System<TNetwork> for GorillaSystem {
+    fn init(&mut self, state: &mut State, _: &Context) -> GgResult {
     
         spawn_anchor(&mut state.ecs, [-3.0, -3.0].into())?;
         spawn_anchor(&mut state.ecs, [-3.0, 3.0].into())?;
@@ -72,7 +72,8 @@ impl System for GorillaSystem {
     fn update(
         &mut self, 
         state: &mut State, 
-        _: &Context) -> GameResult {
+        _: &Context,
+        _: &mut TNetwork) -> GgResult {
         let mut ids: Vec<EntityId> = Vec::new();
         let filter = component_filter!(Gorilla, Body);
         state.ecs.collect_with(&filter, &mut ids);
@@ -104,7 +105,7 @@ impl System for GorillaSystem {
         Ok(())
     }
     
-    fn teardown_entity(&mut self, entity: EntityId, state: &mut State) -> GameResult {
+    fn teardown_entity(&mut self, entity: EntityId, state: &mut State) -> GgResult {
         if let Ok(&_) = state.ecs.borrow::<Gorilla>(entity) {
             spawn_gorilla(&mut state.ecs, [-0.5, 2.0].into())?;
         }
@@ -114,6 +115,7 @@ impl System for GorillaSystem {
     fn key_down(&mut self,
         state: &mut State,
         context: &mut Context,
+        _: &mut TNetwork,
         keycode: KeyCode,
         _: KeyMods,
         _: bool) {
@@ -124,6 +126,7 @@ impl System for GorillaSystem {
     fn key_up(&mut self,
         state: &mut State,
         context: &mut Context,
+        _: &mut TNetwork,
         keycode: KeyCode,
         _: KeyMods) {
             update_button_state(keycode, state, context);
