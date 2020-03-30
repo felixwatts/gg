@@ -1,7 +1,13 @@
 use nalgebra::Vector2;
 use crate::component::radial_body::RadialBody;
 use crate::component::planar_body::PlanarBody;
+use serde::{Serialize, Deserialize};
 
+#[derive(Clone)]
+#[derive(Deserialize)]
+#[derive(Serialize)]
+#[derive(PartialEq)]
+#[derive(Debug)]
 pub enum Body {
     Planar(PlanarBody),
     Radial(RadialBody)
@@ -10,6 +16,7 @@ pub enum Body {
 impl Body {
     pub fn new(loc: Vector2::<f32>, vel: Vector2::<f32>, acc: Vector2::<f32>) -> Body {
         Body::Planar(PlanarBody{
+            keyframe: true,
             loc,
             vel,
             accel: acc
@@ -37,10 +44,24 @@ impl Body {
         }
     }
 
+    pub fn get_is_keyframe_and_reset(&mut self) -> bool {
+        match self {
+            Body::Planar(b) => { let result = b.keyframe; b.keyframe = false; result },
+            Body::Radial(b) => { let result = b.keyframe; b.keyframe = false; result }
+        }
+    }
+
+    pub fn get_acc(&self) -> Vector2::<f32> {
+        match self {
+            Body::Planar(b) => b.accel,
+            Body::Radial(b) => b.accel
+        }
+    }
+
     pub fn set_acc(&mut self, acc: Vector2::<f32>) {
         match self {
-            Body::Planar(b) => b.accel = acc,
-            Body::Radial(b) => b.accel = acc
+            Body::Planar(b) => { b.accel = acc; b.keyframe = true; }
+            Body::Radial(b) => { b.accel = acc; b.keyframe = true; }
         }
     }
 

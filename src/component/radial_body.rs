@@ -1,8 +1,14 @@
 use crate::component::planar_body::PlanarBody;
 use nalgebra::Vector2;
+use serde::{Serialize, Deserialize};
 
 #[derive(Clone)]
+#[derive(Deserialize)]
+#[derive(Serialize)]
+#[derive(PartialEq)]
+#[derive(Debug)]
 pub struct RadialBody {
+    pub keyframe: bool,
     pub origin: Vector2<f32>,
     pub radius: f32,
     pub loc: f32,
@@ -35,6 +41,10 @@ impl RadialBody {
         let accel = self.accel_along_tangent();
         self.loc += (self.vel + (accel * duration / 2.0)) * duration;
         self.vel += accel * duration;
+
+        // for some reason a small amount of damping is neccessary here to
+        // stop velocity increasing continuously while swinging
+        self.vel *= 1.0 - (0.1 * duration);
     }
 
     pub fn to_planar(&self) -> PlanarBody {
@@ -42,6 +52,7 @@ impl RadialBody {
         let vel = self.tangent() * self.vel * self.radius;
         let accel = self.accel;
         PlanarBody{
+            keyframe: true,
             loc,
             vel,
             accel
@@ -78,6 +89,7 @@ fn assert_roughly_eq(expected: f32, actual: f32) {
 #[cfg(test)]
 fn expect_accel_along_tangent(loc: f32, radius: f32, ax: f32, ay: f32, expected: f32) {
     let subject = RadialBody {
+        keyframe: true,
         origin: Vector2::<f32>::zeros(),
         radius: radius,
         loc: loc,
@@ -108,6 +120,7 @@ fn test_radius() {
 #[cfg(test)]
 fn expect_radius(loc: f32, radius: f32, x: f32, y: f32) {
     let subject = RadialBody {
+        keyframe: true,
         origin: Vector2::<f32>::zeros(),
         radius: radius,
         loc: loc,
@@ -139,6 +152,7 @@ fn test_tangent() {
 #[cfg(test)]
 fn expect_tangent(loc: f32, radius: f32, x: f32, y: f32) {
     let subject = RadialBody {
+        keyframe: true,
         origin: Vector2::<f32>::zeros(),
         radius: radius,
         loc: loc,
@@ -176,8 +190,10 @@ fn test_update() {
 }
 
 #[cfg(test)]
+// expected vel should be without damping, damping factor will be accounted for inside this fn
 fn expect_update(radius: f32, loc: f32, vel: f32, ax: f32, ay: f32, t: f32, exp_loc: f32, exp_vel: f32) {
     let mut subject = RadialBody{
+        keyframe: true,
         origin: Vector2::<f32>::zeros(),
         radius,
         loc,
@@ -191,7 +207,7 @@ fn expect_update(radius: f32, loc: f32, vel: f32, ax: f32, ay: f32, t: f32, exp_
     assert_eq!(Vector2::<f32>::new(ax, ay), subject.accel);
     assert_eq!(radius, subject.radius);
     assert_roughly_eq(exp_loc, subject.loc);
-    assert_roughly_eq(exp_vel, subject.vel);
+    assert_roughly_eq(exp_vel * (1.0 - (0.1 * t)), subject.vel);
 }
 
 #[test]
@@ -225,6 +241,7 @@ fn test_to_planar() {
 fn expect_to_planar(ox: f32, oy: f32, radius: f32, loc: f32, vel: f32, ax: f32, ay: f32, 
     exp_loc_x: f32, exp_loc_y: f32, exp_vel_x: f32, exp_vel_y: f32) {
     let subject = RadialBody{
+        keyframe: true,
         origin: Vector2::<f32>::new(ox, oy),
         radius,
         loc,

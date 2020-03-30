@@ -1,8 +1,14 @@
 use crate::component::radial_body::RadialBody;
 use nalgebra::Vector2;
+use serde::{Serialize, Deserialize};
 
 #[derive(Clone)]
+#[derive(Deserialize)]
+#[derive(Serialize)]
+#[derive(PartialEq)]
+#[derive(Debug)]
 pub struct PlanarBody {
+    pub keyframe: bool,
     pub loc: Vector2<f32>,
     pub vel: Vector2<f32>,
     pub accel: Vector2<f32>
@@ -25,6 +31,7 @@ impl PlanarBody {
         );
         let vel = nalgebra::Matrix::dot(&self.vel, &tangent) / radius.norm();
         RadialBody{
+            keyframe: true,
             origin,
             radius: radius.norm(),
             loc,
@@ -61,6 +68,7 @@ fn test_update() {
 fn expect_update(loc_x: f32, loc_y: f32, vel_x: f32, vel_y: f32, a_x: f32, a_y: f32, 
     exp_loc_x: f32, exp_loc_y: f32, exp_vel_x: f32, exp_vel_y: f32, t: f32) {
     let mut subject = PlanarBody{
+        keyframe: true,
         loc: Vector2::new(loc_x, loc_y),
         vel: Vector2::new(vel_x, vel_y),
         accel: Vector2::new(a_x, a_y)
@@ -116,6 +124,7 @@ fn test_to_radial() {
 fn expect_to_radial(loc_x: f32, loc_y: f32, vel_x: f32, vel_y: f32, a_x: f32, a_y: f32, o_x: f32, o_y: f32, 
     exp_radius: f32, exp_loc: f32, exp_vel: f32) {
     let subject = PlanarBody{
+        keyframe: true,
         loc: Vector2::new(loc_x, loc_y),
         vel: Vector2::new(vel_x, vel_y),
         accel: Vector2::new(a_x, a_y)
