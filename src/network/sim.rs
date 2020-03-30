@@ -99,7 +99,7 @@ impl<TMsg> TxChannel<TMsg> for SimTxChannel<TMsg> {
         let delay_write = std::cmp::min(self.current_step.get() - self.last_tx_step, self.latency);
         self.last_tx_step = self.current_step.get();
         self.sender.send(SimMsg::<TMsg>::Delay(delay_write))?;
-        self.sender.send(SimMsg::<TMsg>::Msg(msg));
+        self.sender.send(SimMsg::<TMsg>::Msg(msg))?;
         Ok(())
     }
 }

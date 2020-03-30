@@ -38,9 +38,4 @@ pub struct Gorilla{
 
 pub struct Anchor;
 
-pub struct TxQueue<TMsg>(pub Vec::<TMsg>);
-
-#[derive(Clone)]
-pub struct RxQueue<TMsg>(pub Vec::<TMsg>);
-
 pub struct Network;

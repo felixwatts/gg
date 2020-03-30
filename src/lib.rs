@@ -2,7 +2,6 @@ mod system;
 mod component;
 mod engine;
 mod entity;
-mod state;
 mod network;
 pub mod setup;
 pub mod err;

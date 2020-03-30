@@ -9,7 +9,6 @@ use crate::network::RxChannel;
 use crate::network::TxChannel;
 use std::marker::PhantomData;
 use crate::err::GgResult;
-use std::convert::TryInto;
 use std::sync::mpsc::channel;
 use std::sync::Arc;
 use serde::de::DeserializeOwned;
@@ -18,20 +17,16 @@ use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
 
 pub struct RealNetwork<TTx, TRx>{
-    tcp_stream: TcpStream,
     is_closed: Arc<AtomicBool>,
     tx_q_out: Sender<TTx>,
     rx_q_in: Receiver<TRx>,
+    #[allow(dead_code)]
     tx_thread: JoinHandle<GgResult>,
+    #[allow(dead_code)]
     rx_thread: JoinHandle<GgResult>,
     
     phantom1: PhantomData<TTx>,
     phantom2: PhantomData<TRx>,
-}
-
-fn u32_from_slice(slice: &[u8]) -> Option<u32> {
-    let arr: [u8; 4] = slice.try_into().ok()?;
-    Some(u32::from_ne_bytes(arr))
 }
 
 fn rx_loop<TRx>(
@@ -84,7 +79,6 @@ impl<TTx, TRx> RealNetwork<TTx, TRx>
         });
 
         Ok(RealNetwork{
-            tcp_stream,
             is_closed,
             tx_q_out,
             rx_q_in,
@@ -124,7 +118,7 @@ impl<TTx, TRx> RxChannel<TRx> for RealNetwork<TTx, TRx> {
 #[test]
 fn test_real_network() {
     let listener = TcpListener::bind("127.0.0.1:9001").unwrap();
-    let server_thread = std::thread::spawn(move || {
+    let _ = std::thread::spawn(move || {
         let mut clients = vec![];
         for stream in listener.incoming() {
             let mut client = RealNetwork::<ServerMsg, ClientMsg>::new(stream.unwrap()).unwrap();
@@ -133,8 +127,8 @@ fn test_real_network() {
         }
     });
 
-    let mut client_stream = TcpStream::connect("127.0.0.1:9001").unwrap();
-    let mut client = RealNetwork::<ClientMsg, ServerMsg>::new(client_stream).unwrap();;
+    let client_stream = TcpStream::connect("127.0.0.1:9001").unwrap();
+    let mut client = RealNetwork::<ClientMsg, ServerMsg>::new(client_stream).unwrap();
 
     client.enqueue(ClientMsg::ButtonStateChange([true, true])).unwrap();
 
@@ -145,6 +139,7 @@ fn test_real_network() {
 }
 
 pub struct RealServer {
+    #[allow(dead_code)]
     listen_thread: JoinHandle<GgResult>,
     new_client_recv: Receiver<RealNetwork<ServerMsg, ClientMsg>>
 }
@@ -156,7 +151,7 @@ impl RealServer {
         let listen_thread = std::thread::spawn(move || {
             for stream in listener.incoming() {
                 let client = RealNetwork::<ServerMsg, ClientMsg>::new(stream.unwrap()).unwrap();
-                new_client_send.send(client);
+                new_client_send.send(client)?;
             }
 
             Ok(())

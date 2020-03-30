@@ -48,7 +48,7 @@ impl From<std::sync::mpsc::RecvError> for GgError {
 }
 
 impl From<recs::NotFound> for GgError {
-    fn from(error: recs::NotFound) -> Self {
+    fn from(_: recs::NotFound) -> Self {
         GgError("Entity not found".to_string())
     }
 }

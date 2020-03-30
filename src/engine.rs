@@ -1,14 +1,14 @@
+use recs::Ecs;
 use ggez::event::KeyMods;
 use ggez::event::KeyCode;
 use crate::component::Owns;
-use crate::state::State;
 use crate::component::Dead;
 use crate::system::system::System;
 use crate::err::GgResult;
 use ggez::Context;
 
 pub struct Engine{
-    state: State,
+    state: Ecs,
     systems: Vec<Box<dyn System>>,
 }
 
@@ -16,9 +16,7 @@ impl Engine {
 
     pub fn new(systems: Vec<Box<dyn System>>, context: &mut Context) -> GgResult<Engine> {
         let mut engine = Engine{
-            state: State{
-                ecs: recs::Ecs::new()
-            },
+            state: Ecs::new(),
             systems
         };
 
@@ -76,7 +74,7 @@ impl Engine {
     fn teardown_dead_entities(&mut self) -> GgResult {
         let mut dead_entities = vec![];
         let filter = component_filter!(Dead);
-        self.state.ecs.collect_with(&filter, &mut dead_entities);
+        self.state.collect_with(&filter, &mut dead_entities);
         for entity in dead_entities.iter() {
             self.teardown_entity(*entity)?;
         }
@@ -86,11 +84,11 @@ impl Engine {
 
     fn teardown_entity(&mut self, entity: recs::EntityId) -> GgResult {
         // its possible for an entity in an Owns list to have been previously removed
-        if !self.state.ecs.exists(entity) {
+        if !self.state.exists(entity) {
             return Ok(())
         }
 
-        if let Ok(owns) = self.state.ecs.get::<Owns>(entity) {
+        if let Ok(owns) = self.state.get::<Owns>(entity) {
             for &owned_entity in owns.0.iter() {
                 self.teardown_entity(owned_entity)?;
             }
@@ -100,7 +98,7 @@ impl Engine {
             system.teardown_entity(entity, &mut self.state)?;
         }
 
-        self.state.ecs.destroy_entity(entity).unwrap();
+        self.state.destroy_entity(entity).unwrap();
 
         Ok(())
     }
