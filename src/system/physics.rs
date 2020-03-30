@@ -9,12 +9,11 @@ use crate::system::system::System;
 pub struct PhysicsSystem {
 }
 
-impl<TNetwork> System<TNetwork> for PhysicsSystem {
+impl System for PhysicsSystem {
     fn update(
         &mut self, 
         state: &mut State, 
-        context: &Context,
-        _: &mut TNetwork) -> GgResult {
+        context: &Context) -> GgResult {
         let mut ids: Vec<EntityId> = Vec::new();
         let filter = component_filter!(Body);
         state.ecs.collect_with(&filter, &mut ids);

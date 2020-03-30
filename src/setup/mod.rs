@@ -24,7 +24,7 @@ pub struct Setup<TSetup> where TSetup: EventHandler {
 pub fn new_server() -> GgResult<Setup<ServerSetup>>{
     let (mut context, event_loop) = build_context()?;
 
-    let setup = ServerSetup::new(&mut context);
+    let setup = ServerSetup::new(&mut context)?;
 
     Ok(Setup{
         context: context,
@@ -36,7 +36,7 @@ pub fn new_server() -> GgResult<Setup<ServerSetup>>{
 pub fn new_client() -> GgResult<Setup<ClientSetup>>{
     let (mut context, event_loop) = build_context()?;
 
-    let setup = ClientSetup::new(&mut context);
+    let setup = ClientSetup::new(&mut context)?;
 
     Ok(Setup{
         context: context,
@@ -48,7 +48,7 @@ pub fn new_client() -> GgResult<Setup<ClientSetup>>{
 pub fn new_local() -> GgResult<Setup<LocalSetup>> {
     let (mut context, event_loop) = build_context()?;
 
-    let setup = LocalSetup::new(&mut context);
+    let setup = LocalSetup::new(&mut context)?;
 
     Ok(Setup{
         context: context,
@@ -60,7 +60,7 @@ pub fn new_local() -> GgResult<Setup<LocalSetup>> {
 pub fn new_local_client_server(latency: u32) -> GgResult<Setup<LocalClientServerSetup>> {
     let (mut context, event_loop) = build_context()?;
 
-    let setup = LocalClientServerSetup::new(&mut context, latency);
+    let setup = LocalClientServerSetup::new(&mut context, latency)?;
 
     Ok(Setup{
         context: context,

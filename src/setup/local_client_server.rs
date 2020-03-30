@@ -1,28 +1,49 @@
-use crate::network::sim::SimNetwork;
+use crate::system::system::System;
+use crate::err::GgResult;
 use ggez::event::KeyMods;
 use ggez::event::KeyCode;
 use ggez::Context;
 use ggez::event::EventHandler;
 use crate::engine::Engine;
 use ggez::GameResult;
+use crate::network::sim::SimServerContainer;
 
 pub struct LocalClientServerSetup{
-    client_engine: Engine<SimNetwork>,
-    server_engine: Engine<SimNetwork>,
-    network: SimNetwork,
+    client_engine: Option<Engine>,
+    server_engine: Option<Engine>,
+    network: SimServerContainer,
 }
 
-impl LocalClientServerSetup{
-    pub fn new(context: &mut ggez::Context, latency: u32) -> LocalClientServerSetup{
+impl LocalClientServerSetup {
+    pub fn new(context: &mut ggez::Context, latency: u32) -> GgResult<LocalClientServerSetup>{
 
-        let client_engine = crate::engine::new_client(context).unwrap();
-        let server_engine = crate::engine::new_server(context).unwrap();
+        let mut result = LocalClientServerSetup{
+            client_engine: None,
+            server_engine: None,
+            network: SimServerContainer::new()
+        };
 
-        LocalClientServerSetup{
-            client_engine: client_engine,
-            server_engine: server_engine,
-            network: SimNetwork::new(latency)
-        }
+        let mut server = result.network.get_server(latency);
+        let client = server.connect();
+
+        let server_systems: Vec<Box<dyn System>> = vec![
+            Box::new(crate::system::server::ServerSystem::new(server)?),
+            Box::new(crate::system::physics::PhysicsSystem{}),
+            Box::new(crate::system::gorilla::GorillaSystem{}),
+        ];
+        let server_engine = Engine::new(server_systems, context)?;
+
+        let client_systems: Vec<Box<dyn System>> = vec![
+            Box::new(crate::system::client::ClientSystem::new(client)),
+            Box::new(crate::system::physics::PhysicsSystem{}),
+            Box::new(crate::system::render::RenderSystem::new(context)?),
+        ];
+        let client_engine = Engine::new(client_systems, context)?;
+
+        result.client_engine = Some(client_engine);
+        result.server_engine = Some(server_engine);
+
+        Ok(result)
     }
 }
 
@@ -31,15 +52,15 @@ impl EventHandler for LocalClientServerSetup {
 
         self.network.step();
 
-        self.client_engine.update(context, &mut self.network)?;
-        self.server_engine.update(context, &mut self.network)?; 
+        self.client_engine.as_mut().unwrap().update(context)?;
+        self.server_engine.as_mut().unwrap().update(context)?; 
 
         Ok(())
     }
 
     fn draw(&mut self, context: &mut Context) -> GameResult {
 
-        self.client_engine.draw(context)?;
+        self.client_engine.as_mut().unwrap().draw(context)?;
 
         Ok(())
     }
@@ -51,10 +72,10 @@ impl EventHandler for LocalClientServerSetup {
         keymod: KeyMods,
         repeat: bool,
     ) {
-        self.client_engine.key_down_event(context, &mut self.network, keycode, keymod, repeat);
+        self.client_engine.as_mut().unwrap().key_down_event(context, keycode, keymod, repeat);
     }
 
     fn key_up_event(&mut self, context: &mut Context, keycode: KeyCode, keymod: KeyMods) {
-        self.client_engine.key_up_event(context, &mut self.network, keycode, keymod);
+        self.client_engine.as_mut().unwrap().key_up_event(context, keycode, keymod);
     }
 }

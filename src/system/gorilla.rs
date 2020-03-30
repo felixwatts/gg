@@ -55,7 +55,7 @@ fn update_button_state(keycode: KeyCode, state: &mut State, context: &Context) {
     }
 }
 
-impl<TNetwork> System<TNetwork> for GorillaSystem {
+impl System for GorillaSystem {
     fn init(&mut self, state: &mut State, _: &Context) -> GgResult {
     
         spawn_anchor(&mut state.ecs, [-3.0, -3.0].into())?;
@@ -64,16 +64,13 @@ impl<TNetwork> System<TNetwork> for GorillaSystem {
         spawn_anchor(&mut state.ecs, [3.0, -3.0].into())?;
         spawn_anchor(&mut state.ecs, [3.0, 3.0].into())?;
 
-        spawn_gorilla(&mut state.ecs, [-0.95, 2.0].into())?;
-
         Ok(())
     }
 
     fn update(
         &mut self, 
         state: &mut State, 
-        _: &Context,
-        _: &mut TNetwork) -> GgResult {
+        _: &Context) -> GgResult {
         let mut ids: Vec<EntityId> = Vec::new();
         let filter = component_filter!(Gorilla, Body);
         state.ecs.collect_with(&filter, &mut ids);
@@ -115,7 +112,6 @@ impl<TNetwork> System<TNetwork> for GorillaSystem {
     fn key_down(&mut self,
         state: &mut State,
         context: &mut Context,
-        _: &mut TNetwork,
         keycode: KeyCode,
         _: KeyMods,
         _: bool) {
@@ -126,7 +122,6 @@ impl<TNetwork> System<TNetwork> for GorillaSystem {
     fn key_up(&mut self,
         state: &mut State,
         context: &mut Context,
-        _: &mut TNetwork,
         keycode: KeyCode,
         _: KeyMods) {
             update_button_state(keycode, state, context);

@@ -1,6 +1,5 @@
 pub mod sim;
 pub mod real;
-pub mod server;
 
 use crate::component::Sprite;
 use crate::component::body::Body;
@@ -8,7 +7,10 @@ use crate::err::GgResult;
 use serde::Serialize;
 use serde::Deserialize;
 
-pub struct NoNetwork{}
+pub trait Server<TNetwork>
+    where TNetwork: TxChannel<ServerMsg> + RxChannel<ClientMsg> {
+    fn get_new_clients(&mut self, buffer: &mut Vec<TNetwork>);
+}
 
 pub trait TxChannel<TMsg>{
     fn enqueue(&mut self, msg: TMsg) -> GgResult;

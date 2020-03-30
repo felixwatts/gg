@@ -13,7 +13,7 @@ pub struct RenderSystem {
     sprite_batch: SpriteBatch,
 }
 
-impl<TNetwork> System<TNetwork> for RenderSystem {
+impl System for RenderSystem {
     fn draw(&mut self, state: &State, context: &mut Context) -> GgResult {
         self.set_focus(state, context)?;
         graphics::clear(context, [0.0, 0.0, 0.0, 1.0].into());

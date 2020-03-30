@@ -12,33 +12,16 @@ use crate::system::system::System;
 use crate::network::ClientMsg;
 use std::collections::HashMap;
 
-pub struct ClientSystem {
+pub struct ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg> {
+    server: TNetwork,
     network_entity_id_mapping: HashMap<u64, EntityId>
 }
 
-fn tx_key_state<TNetwork>(
-    keycode: KeyCode, 
-    state: &mut State, 
-    context: &mut Context, 
-    network: &mut TNetwork) 
-    where TNetwork: TxChannel::<ClientMsg> {
-    match keycode {
-        KeyCode::Space | KeyCode::Return =>
-        {
-            let key_state = [
-                ggez::input::keyboard::is_key_pressed(context, KeyCode::Space),
-                ggez::input::keyboard::is_key_pressed(context, KeyCode::Return),
-            ];
-            network.enqueue(ClientMsg::ButtonStateChange(key_state));
-        },
-        _ => {}
-    }
-}
+impl<TNetwork> ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg> {
 
-impl ClientSystem {
-
-    pub fn new() -> ClientSystem {
+    pub fn new(server: TNetwork) -> ClientSystem<TNetwork> {
         ClientSystem{
+            server,
             network_entity_id_mapping: HashMap::<u64, EntityId>::new()
         }
     }
@@ -53,38 +36,56 @@ impl ClientSystem {
             client_id
         }
     }
+
+    fn tx_key_state(
+        &mut self,
+        keycode: KeyCode, 
+        state: &mut State, 
+        context: &mut Context) 
+        where TNetwork: TxChannel::<ClientMsg> {
+        match keycode {
+            KeyCode::Space | KeyCode::Return =>
+            {
+                let key_state = [
+                    ggez::input::keyboard::is_key_pressed(context, KeyCode::Space),
+                    ggez::input::keyboard::is_key_pressed(context, KeyCode::Return),
+                ];
+                self.server.enqueue(ClientMsg::ButtonStateChange(key_state));
+            },
+            _ => {}
+        }
+    }
 }
 
-impl<TNetwork> System<TNetwork> for ClientSystem where TNetwork: TxChannel::<ClientMsg> + RxChannel::<ServerMsg> {
-    fn key_down(&mut self,
+impl<TNetwork> System for ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg> {
+    fn key_down(
+        &mut self,
         state: &mut State,
         context: &mut Context,
-        network: &mut TNetwork,
         keycode: KeyCode,
         _: KeyMods,
         _: bool) {
-        tx_key_state(keycode, state, context, network);
+            self.tx_key_state(keycode, state, context);
     }
 
-    fn key_up(&mut self,
+    fn key_up(
+        &mut self,
         state: &mut State,
         context: &mut Context,
-        network: &mut TNetwork,
         keycode: KeyCode,
         _: KeyMods) {
-        tx_key_state(keycode, state, context, network);
+            self.tx_key_state(keycode, state, context);
     }
 
     fn update(
         &mut self, 
         state: &mut State, 
-        _: &Context, 
-        network: &mut TNetwork) -> GgResult {
+        _: &Context) -> GgResult {
 
         // read all network entities
         let mut buffer = vec![];
-        network.dequeue(&mut buffer);
-        for msg in buffer {
+        self.server.dequeue(&mut buffer);
+        for msg in buffer.drain(..) {
             match msg {
                 ServerMsg::SetBody(server_id, body) => {
                     let client_id = self.to_client_entity_id(state, server_id);

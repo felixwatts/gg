@@ -36,7 +36,7 @@ impl From<std::io::Error> for GgError {
 }
 
 impl From<serde_cbor::error::Error> for GgError {
-    fn from(error: std::io::Error) -> Self {
+    fn from(error: serde_cbor::error::Error) -> Self {
         GgError(error.to_string())
     }
 }

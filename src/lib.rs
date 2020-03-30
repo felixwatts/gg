@@ -5,7 +5,7 @@ mod entity;
 mod state;
 mod network;
 pub mod setup;
-mod err;
+pub mod err;
 
 extern crate nalgebra;
 extern crate ggez;
