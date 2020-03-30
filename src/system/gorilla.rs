@@ -108,13 +108,6 @@ impl System for GorillaSystem {
         }
         Ok(())
     }
-    
-    fn teardown_entity(&mut self, entity: EntityId, state: &mut Ecs) -> GgResult {
-        if let Ok(&_) = state.borrow::<Gorilla>(entity) {
-            spawn_gorilla(state, [-1.5, 5.0].into())?;
-        }
-        Ok(())
-    }
 
     fn key_down(&mut self,
         state: &mut Ecs,

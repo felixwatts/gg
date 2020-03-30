@@ -104,6 +104,13 @@ impl<TServer, TNetwork> System for ServerSystem<TServer, TNetwork>  where TServe
     }
 
     fn teardown_entity(&mut self, entity: EntityId, state: &mut Ecs) -> GgResult {
+        if state.has::<Gorilla>(entity)? {
+            let new_gorilla_entity = crate::system::gorilla::spawn_gorilla(state, [-1.5, 5.0].into())?;
+            if let Ok(Some(client)) = state.unset::<Client<TNetwork>>(entity) {
+                state.set(new_gorilla_entity, client)?;
+            }
+        }
+
         if state.has::<Network>(entity).unwrap() {
             let msg = ServerMsg::Kill(entity.get_id_number());
             self.entity_buffer_1.clear();
