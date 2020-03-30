@@ -15,7 +15,6 @@ pub enum Body {
 
 impl Body {
     pub fn new(loc: Vector2::<f32>, vel: Vector2::<f32>, acc: Vector2::<f32>) -> Body {
-        println!("new body");
         Body::Planar(PlanarBody{
             keyframe: true,
             loc,
@@ -60,7 +59,6 @@ impl Body {
     }
 
     pub fn set_acc(&mut self, acc: Vector2::<f32>) {
-        println!("set acc");
         match self {
             Body::Planar(b) => { b.accel = acc; b.keyframe = true; }
             Body::Radial(b) => { b.accel = acc; b.keyframe = true; }
@@ -68,7 +66,6 @@ impl Body {
     }
 
     pub fn to_attached(&self, origin: Vector2::<f32>) -> Body {
-        println!("to attached");
         match self {
             Body::Planar(b) => Body::Radial(b.to_radial(origin)),
             Body::Radial(_) => panic!("already attached")
@@ -76,7 +73,6 @@ impl Body {
     }
 
     pub fn to_detached(&self) -> Body {
-        println!("to detached");
         match self {
             Body::Planar(_) => panic!("already detached"),
             Body::Radial(b) => Body::Planar(b.to_planar())
