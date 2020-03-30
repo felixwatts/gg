@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 nalgebra = { version = "0.18", features = ["serde-serialize"] }
 ggez = "*"
-recs = { path = "../rustic-ecs" }
+recs = { git = "https://github.com/felixwatts/rustic-ecs.git" }
 serde = { version = "1.0", features = ["derive"] }
 serde_cbor = "*"
 byteorder = "*"

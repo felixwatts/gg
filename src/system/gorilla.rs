@@ -17,13 +17,15 @@ pub struct GorillaSystem {
     pub is_local: bool
 }
 
-pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GgResult<EntityId> {
+pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>, with_focus: bool) -> GgResult<EntityId> {
     let gorilla = ecs.create_entity();
-    with_sprite(ecs, gorilla, [1.0, 0.0, 0.0, 1.0], [0.3, 0.3].into())?;
-    ecs.set(gorilla, Focus).unwrap();
+    with_sprite(ecs, gorilla, [1.0, 0.0, 0.0, 1.0], [0.3, 0.3].into())?;    
     ecs.set(gorilla, Gorilla{button_state:[false, false]}).unwrap();
     ecs.set(gorilla, Body::new(loc, Vector2::zeros(), Vector2::new(0.0, -10.0))).unwrap();
     ecs.set(gorilla, Network).unwrap();
+    if with_focus {
+        ecs.set(gorilla, Focus).unwrap();
+    }
 
     Ok(gorilla)
 }
@@ -65,7 +67,7 @@ impl System for GorillaSystem {
         spawn_anchor(state, [3.0, 3.0].into())?;
 
         if self.is_local {
-            spawn_gorilla(state, [-1.5, 5.0].into())?;
+            spawn_gorilla(state, [-1.5, 5.0].into(), true)?;
         }
 
         Ok(())

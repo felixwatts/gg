@@ -60,8 +60,12 @@ impl<TServer, TNetwork> System for ServerSystem<TServer, TNetwork>  where TServe
         // process new clients
         self.new_client_buffer.clear();
         self.server.get_new_clients(&mut self.new_client_buffer);
-        for new_client in self.new_client_buffer.drain(..) {
-            let client_entity = crate::system::gorilla::spawn_gorilla(state, [-1.5, 5.0].into())?;
+        for mut new_client in self.new_client_buffer.drain(..) {
+            let client_entity = crate::system::gorilla::spawn_gorilla(state, [-1.5, 5.0].into(), false)?;
+
+            let msg = ServerMsg::SetFocus(client_entity.get_id_number());
+            new_client.enqueue(msg)?;
+
             state.set(client_entity, Client(new_client))?;
             println!("client #{} has connected", client_entity.get_id_number());
 

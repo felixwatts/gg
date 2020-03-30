@@ -1633,6 +1633,7 @@ dependencies = [
 [[package]]
 name = "recs"
 version = "2.0.1"
+source = "git+https://github.com/felixwatts/rustic-ecs.git#e87cc02a5259082388150eb6ce673643eec496a8"
 
 [[package]]
 name = "redox_syscall"
