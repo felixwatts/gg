@@ -5,6 +5,8 @@ use serde::{Serialize, Deserialize};
 #[derive(Clone)]
 #[derive(Deserialize)]
 #[derive(Serialize)]
+#[derive(PartialEq)]
+#[derive(Debug)]
 pub struct PlanarBody {
     pub loc: Vector2<f32>,
     pub vel: Vector2<f32>,

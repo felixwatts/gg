@@ -21,6 +21,8 @@ pub struct Owns(pub Vec::<EntityId>);
 #[derive(Clone)]
 #[derive(Deserialize)]
 #[derive(Serialize)]
+#[derive(PartialEq)]
+#[derive(Debug)]
 pub struct Sprite{
     pub color: [f32; 4],
     pub location: Vector2<f32>,

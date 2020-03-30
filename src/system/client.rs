@@ -102,7 +102,9 @@ impl<TNetwork> System for ClientSystem<TNetwork> where TNetwork: TxChannel<Clien
                     let client_id = self.to_client_entity_id(state, server_id);
                     self.network_entity_id_mapping.remove(&server_id);
                     state.destroy_entity(client_id).unwrap();
-                }
+                },
+                #[cfg(test)]
+                ServerMsg::Test(_) => {}
             }
         }
 

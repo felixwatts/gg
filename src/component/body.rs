@@ -6,6 +6,8 @@ use serde::{Serialize, Deserialize};
 #[derive(Clone)]
 #[derive(Deserialize)]
 #[derive(Serialize)]
+#[derive(PartialEq)]
+#[derive(Debug)]
 pub enum Body {
     Planar(PlanarBody),
     Radial(RadialBody)

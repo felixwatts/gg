@@ -68,7 +68,9 @@ impl<TServer, TNetwork> System for ServerSystem<TServer, TNetwork>  where TServe
                     ClientMsg::ButtonStateChange(m) => {
                         let gorilla_component = state.borrow_mut::<Gorilla>(client_entity).unwrap();
                         gorilla_component.button_state = *m;
-                    }
+                    },
+                    #[cfg(test)]
+                    ClientMsg::Test(_) => {}
                 }
             }
         }

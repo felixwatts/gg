@@ -14,90 +14,20 @@ enum SimMsg<T> {
     Delay(u32)
 }
 
-// #[test]
-// fn test_sim_channel_zero_latency() {
-//     let mut subject = SimChannel::<u8>::new(0);
-//     let mut buffer = vec![0u8];
-//     subject.enqueue(1).unwrap();
-//     subject.enqueue(2).unwrap();
-//     subject.enqueue(3).unwrap();
-//     subject.dequeue(&mut buffer).unwrap();
-//     assert_eq!(3, buffer.len());
-//     assert_eq!(1, buffer[0]);
-//     assert_eq!(2, buffer[1]);
-//     assert_eq!(3, buffer[2]);
-
-//     subject.step();
-
-//     subject.dequeue(&mut buffer).unwrap();
-//     assert_eq!(0, buffer.len());
-// }
-
-// #[test]
-// fn sim_channel_max_latency() {
-//     let mut subject = SimChannel::<u8>::new(1);
-//     let mut buffer = vec![0u8];
-
-//     subject.step();
-//     subject.dequeue(&mut buffer).unwrap();
-
-//     subject.step();
-//     subject.enqueue(1).unwrap();
-//     subject.dequeue(&mut buffer).unwrap();
-
-//     subject.step();
-//     subject.dequeue(&mut buffer).unwrap();
-
-//     assert_eq!(1, buffer.len());
-//     assert_eq!(1, buffer[0]);
-// }
-
-// #[test]
-// fn sim_channel_following_latency() {
-//     let mut subject = SimChannel::<u8>::new(3);
-//     let mut buffer = vec![0u8];
-
-//     subject.enqueue(1).unwrap();
-//     subject.dequeue(&mut buffer).unwrap();
-//     assert_eq!(0, buffer.len());
-
-//     subject.step();
-
-//     subject.enqueue(2).unwrap();
-//     subject.enqueue(3).unwrap();
-//     subject.dequeue(&mut buffer).unwrap();
-//     assert_eq!(0, buffer.len());
-
-//     subject.step();
-
-//     subject.dequeue(&mut buffer).unwrap();
-//     assert_eq!(0, buffer.len());
-
-//     subject.step();
-    
-//     subject.dequeue(&mut buffer).unwrap();
-//     assert_eq!(1, buffer.len());
-//     assert_eq!(1, buffer[0]);
-
-//     subject.step();
-    
-//     subject.dequeue(&mut buffer).unwrap();
-//     assert_eq!(2, buffer.len());
-//     assert_eq!(2, buffer[0]);
-//     assert_eq!(3, buffer[1]);
-// }
-
 struct SimTxChannel<TMsg> {
     current_step: Rc<Cell<u32>>,
-    last_tx_step: u32,
+    last_tx_step: Option<u32>,
     latency: u32,
     sender: Sender<SimMsg<TMsg>>
 }
 
 impl<TMsg> TxChannel<TMsg> for SimTxChannel<TMsg> {
     fn enqueue(&mut self, msg: TMsg) -> GgResult {
-        let delay_write = std::cmp::min(self.current_step.get() - self.last_tx_step, self.latency);
-        self.last_tx_step = self.current_step.get();
+        let delay_write = match self.last_tx_step {
+            Some(step) => std::cmp::min(self.current_step.get() - step, self.latency),
+            None => self.latency
+        };
+        self.last_tx_step = Some(self.current_step.get());
         self.sender.send(SimMsg::<TMsg>::Delay(delay_write))?;
         self.sender.send(SimMsg::<TMsg>::Msg(msg))?;
         Ok(())
@@ -195,7 +125,7 @@ impl SimServer {
 
         let client_tx_channel = SimTxChannel{
             current_step: Rc::clone(&self.current_step),
-            last_tx_step: 0,
+            last_tx_step: None,
             latency: self.latency,
             sender: client_sender
         };
@@ -213,7 +143,7 @@ impl SimServer {
 
         let server_tx_channel = SimTxChannel{
             current_step: Rc::clone(&self.current_step),
-            last_tx_step: 0,
+            last_tx_step: None,
             latency: self.latency,
             sender: server_sender
         };
@@ -240,5 +170,89 @@ impl<'a> Server<SimNetworkEnd<ServerMsg, ClientMsg>> for SimServer {
         buffer.clear();
         buffer.extend(self.new_clients.drain(..));
         self.new_clients.clear();
+    }
+}
+
+#[test]
+fn test_sim_server() {
+    _test_sim_server(0, vec![vec![], vec![], vec![]], vec![vec![], vec![], vec![]]);
+
+    _test_sim_server(0, vec![vec![1], vec![], vec![]], vec![vec![], vec![], vec![]]);
+    _test_sim_server(0, vec![vec![1, 2, 3], vec![], vec![]], vec![vec![], vec![], vec![]]);
+    _test_sim_server(0, vec![vec![1], vec![2], vec![3]], vec![vec![], vec![], vec![]]);
+
+    _test_sim_server(0, vec![vec![], vec![], vec![]], vec![vec![1], vec![], vec![]]);
+    _test_sim_server(0, vec![vec![], vec![], vec![]], vec![vec![1, 2, 3], vec![], vec![]]);
+    _test_sim_server(0, vec![vec![], vec![], vec![]], vec![vec![1], vec![2], vec![3]]);
+
+    _test_sim_server(0, vec![vec![1, 2, 3], vec![], vec![]], vec![vec![1, 2, 3], vec![], vec![]]);
+    _test_sim_server(0, vec![vec![1], vec![2], vec![3]], vec![vec![1], vec![2], vec![3]]);
+
+    _test_sim_server(1, vec![vec![], vec![], vec![]], vec![vec![], vec![], vec![]]);
+
+    _test_sim_server(1, vec![vec![1], vec![], vec![]], vec![vec![], vec![], vec![]]);
+    _test_sim_server(1, vec![vec![1, 2, 3], vec![], vec![]], vec![vec![], vec![], vec![]]);
+    _test_sim_server(1, vec![vec![1], vec![2], vec![3]], vec![vec![], vec![], vec![]]);
+
+    _test_sim_server(1, vec![vec![], vec![], vec![]], vec![vec![1], vec![], vec![]]);
+    _test_sim_server(1, vec![vec![], vec![], vec![]], vec![vec![1, 2, 3], vec![], vec![]]);
+    _test_sim_server(1, vec![vec![], vec![], vec![]], vec![vec![1], vec![2], vec![3]]);
+
+    _test_sim_server(1, vec![vec![1, 2, 3], vec![], vec![]], vec![vec![1, 2, 3], vec![], vec![]]);
+    _test_sim_server(1, vec![vec![1], vec![2], vec![3]], vec![vec![1], vec![2], vec![3]]);
+}
+
+#[cfg(test)]
+fn _test_sim_server(latency: u32, client_actions: Vec::<Vec::<u32>>, server_actions: Vec::<Vec::<u32>>) {
+
+    let client_msgs = client_actions.iter().map(|step| step.iter().map(|&msg| ClientMsg::Test(msg)).collect::<Vec::<_>>()).collect::<Vec::<_>>();
+    let server_msgs = server_actions.iter().map(|step| step.iter().map(|&msg| ServerMsg::Test(msg)).collect::<Vec::<_>>()).collect::<Vec::<_>>();
+
+    let mut subject = SimServerContainer::new();
+    let mut server = subject.get_server(latency);
+    let mut client_end = server.connect();
+    let mut new_clients = vec![];
+    server.get_new_clients(&mut new_clients);
+    let server_end = &mut new_clients[0];
+
+    let mut client_msg_buffer = vec![];
+    let mut server_msg_buffer = vec![];
+
+    for step in 0..(client_msgs.len() + latency as usize) {
+        if step < client_msgs.len() {
+            for client_action in client_msgs[step].iter().map(|m| m.clone()) {
+                client_end.enqueue(client_action).unwrap();
+            }
+
+            for server_action in server_msgs[step].iter().map(|m| m.clone()) {
+                server_end.enqueue(server_action).unwrap();
+            }
+        }
+
+        server_msg_buffer.clear();
+        server_end.dequeue(&mut server_msg_buffer).unwrap();
+
+        if step < latency as usize {
+            assert_eq!(0, server_msg_buffer.len())
+        } else {
+            assert_eq!(client_msgs[step - latency as usize].len(), server_msg_buffer.len());
+            for i in 0..server_msg_buffer.len() {
+                assert_eq!(client_msgs[step - latency as usize][i], server_msg_buffer[i]);
+            }
+        }
+
+        client_msg_buffer.clear();
+        client_end.dequeue(&mut client_msg_buffer).unwrap();
+
+        if step < latency as usize {
+            assert_eq!(0, client_msg_buffer.len())
+        } else {
+            assert_eq!(server_msgs[step - latency as usize].len(), client_msg_buffer.len());
+            for i in 0..client_msg_buffer.len() {
+                assert_eq!(server_msgs[step - latency as usize][i], client_msg_buffer[i]);
+            }
+        }
+
+        subject.step();
     }
 }

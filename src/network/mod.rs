@@ -23,17 +23,25 @@ pub trait RxChannel<TMsg>{
 #[derive(Clone)]
 #[derive(Deserialize)]
 #[derive(Serialize)]
+#[derive(PartialEq)]
+#[derive(Debug)]
 pub enum ServerMsg{
     Kill(u64),
     SetBody(u64, Body),
     SetSprite(u64, Sprite),
-    SetFocus(u64)
+    SetFocus(u64),
+    #[cfg(test)]
+    Test(u32)
 }
 
 #[derive(Clone)]
 #[derive(Deserialize)]
 #[derive(Serialize)]
+#[derive(PartialEq)]
+#[derive(Debug)]
 pub enum ClientMsg{
-    ButtonStateChange([bool; 2])
+    ButtonStateChange([bool; 2]),
+    #[cfg(test)]
+    Test(u32)
 }
 
