@@ -12,3 +12,4 @@ ggez = "*"
 recs = { path = "../rustic-ecs" }
 serde = { version = "1.0", features = ["derive"] }
 serde_cbor = "*"
+byteorder = "*"

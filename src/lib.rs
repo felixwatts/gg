@@ -10,3 +10,4 @@ extern crate nalgebra;
 extern crate ggez;
 #[macro_use]
 extern crate recs;
+extern crate byteorder;

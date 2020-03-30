@@ -15,8 +15,12 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::sync::atomic::AtomicBool;
 use std::sync::atomic::Ordering;
+use std::io::Read;
+use byteorder::{ReadBytesExt, WriteBytesExt};
 
 pub struct RealNetwork<TTx, TRx>{
+    #[allow(dead_code)]
+    tcp_stream: TcpStream,
     is_closed: Arc<AtomicBool>,
     tx_q_out: Sender<TTx>,
     rx_q_in: Receiver<TRx>,
@@ -30,11 +34,15 @@ pub struct RealNetwork<TTx, TRx>{
 }
 
 fn rx_loop<TRx>(
-    tcp_stream: TcpStream, 
+    mut tcp_stream: TcpStream, 
     rx_q_in: Sender<TRx>
 ) -> GgResult where TRx: DeserializeOwned {
+    let mut buffer = vec![0u8; 2048];
     loop {
-        let msg: TRx = serde_cbor::from_reader(&tcp_stream)?;
+        let msg_length = tcp_stream.read_u32::<byteorder::BigEndian>()?;
+        let msg_buffer = &mut buffer[0..msg_length as usize];
+        tcp_stream.read_exact(msg_buffer)?;
+        let msg: TRx = serde_cbor::from_slice(msg_buffer)?;
         rx_q_in.send(msg)?;
     }
 }
@@ -45,6 +53,9 @@ fn tx_loop<TTx>(
 ) -> GgResult where TTx: Serialize {
     loop {
         let msg = tx_q_out.recv()?;
+        let msg_buffer = serde_cbor::to_vec(&msg)?;
+        let msg_length = msg_buffer.len();
+        tcp_stream.write_u32::<byteorder::BigEndian>(msg_length as u32)?;
         serde_cbor::to_writer(&mut tcp_stream, &msg)?;
     }
 }
@@ -68,17 +79,20 @@ impl<TTx, TRx> RealNetwork<TTx, TRx>
 
         let tx_thread = std::thread::spawn(move || {
             let result = tx_loop(tx_stream, tx_q_in);
+            println!("tx thread loop exited: {:?}", result);
             tx_is_closed.store(true, Ordering::Relaxed);
             result
         });
 
         let rx_thread = std::thread::spawn(move || {
             let result = rx_loop(rx_stream, rx_q_out);
+            println!("rx thread loop exited: {:?}", result);
             rx_is_closed.store(true, Ordering::Relaxed);
             result
         });
 
         Ok(RealNetwork{
+            tcp_stream,
             is_closed,
             tx_q_out,
             rx_q_in,
@@ -117,25 +131,44 @@ impl<TTx, TRx> RxChannel<TRx> for RealNetwork<TTx, TRx> {
 
 #[test]
 fn test_real_network() {
-    let listener = TcpListener::bind("127.0.0.1:9001").unwrap();
-    let _ = std::thread::spawn(move || {
-        let mut clients = vec![];
-        for stream in listener.incoming() {
-            let mut client = RealNetwork::<ServerMsg, ClientMsg>::new(stream.unwrap()).unwrap();
-            client.enqueue(ServerMsg::Kill(42u64)).unwrap();
-            clients.push(client);
-        }
-    });
 
-    let client_stream = TcpStream::connect("127.0.0.1:9001").unwrap();
-    let mut client = RealNetwork::<ClientMsg, ServerMsg>::new(client_stream).unwrap();
+    let mut server = RealServer::new().unwrap();
 
-    client.enqueue(ClientMsg::ButtonStateChange([true, true])).unwrap();
+    let client_1_stream = TcpStream::connect("127.0.0.1:9001").unwrap();
+    let mut client_1 = RealNetwork::<ClientMsg, ServerMsg>::new(client_1_stream).unwrap();
+
+    let client_2_stream = TcpStream::connect("127.0.0.1:9001").unwrap();
+    let mut client_2 = RealNetwork::<ClientMsg, ServerMsg>::new(client_2_stream).unwrap();
 
     std::thread::sleep(std::time::Duration::from_millis(50));
 
-    let mut buffer = vec![];
-    client.dequeue(&mut buffer).unwrap();
+    let mut new_clients = vec![];
+    server.get_new_clients(&mut new_clients);
+
+    assert_eq!(2, new_clients.len());
+
+    client_1.enqueue(ClientMsg::Test(1)).unwrap();
+    client_2.enqueue(ClientMsg::Test(2)).unwrap();
+    client_1.enqueue(ClientMsg::Test(3)).unwrap();
+    client_2.enqueue(ClientMsg::Test(4)).unwrap();
+    client_1.enqueue(ClientMsg::Test(5)).unwrap();
+    client_2.enqueue(ClientMsg::Test(6)).unwrap();
+
+    std::thread::sleep(std::time::Duration::from_millis(50));
+
+    let mut server_msg_buffer = vec![];
+    
+    (&mut new_clients[0]).dequeue(&mut server_msg_buffer).unwrap();
+    assert_eq!(3, server_msg_buffer.len());
+    assert_eq!(ClientMsg::Test(1), server_msg_buffer[0]);
+    assert_eq!(ClientMsg::Test(3), server_msg_buffer[1]);
+    assert_eq!(ClientMsg::Test(5), server_msg_buffer[2]);
+
+    &new_clients[1].dequeue(&mut server_msg_buffer).unwrap();
+    assert_eq!(3, server_msg_buffer.len());
+    assert_eq!(ClientMsg::Test(2), server_msg_buffer[0]);
+    assert_eq!(ClientMsg::Test(4), server_msg_buffer[1]);
+    assert_eq!(ClientMsg::Test(6), server_msg_buffer[2]);
 }
 
 pub struct RealServer {
