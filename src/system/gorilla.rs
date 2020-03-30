@@ -14,7 +14,9 @@ use crate::component::body::Body;
 use crate::err::GgResult;
 use recs::EntityId;
 
-pub struct GorillaSystem {}
+pub struct GorillaSystem {
+    pub spawn_gorilla_on_init: bool
+}
 
 pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GgResult<EntityId> {
     let gorilla = ecs.create_entity();
@@ -23,6 +25,8 @@ pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GgResult<EntityI
     ecs.set(gorilla, Gorilla{button_state:[false, false]}).unwrap();
     ecs.set(gorilla, Body::new(loc, Vector2::zeros(), Vector2::new(0.0, -10.0))).unwrap();
     ecs.set(gorilla, Network).unwrap();
+
+    println!("spawn gorilla");
 
     Ok(gorilla)
 }
@@ -62,6 +66,10 @@ impl System for GorillaSystem {
         spawn_anchor(state, [0.0, 0.0].into())?;
         spawn_anchor(state, [3.0, -3.0].into())?;
         spawn_anchor(state, [3.0, 3.0].into())?;
+
+        if self.spawn_gorilla_on_init {
+            spawn_gorilla(state, [-1.5, 5.0].into())?;
+        }
 
         Ok(())
     }
@@ -103,7 +111,7 @@ impl System for GorillaSystem {
     
     fn teardown_entity(&mut self, entity: EntityId, state: &mut Ecs) -> GgResult {
         if let Ok(&_) = state.borrow::<Gorilla>(entity) {
-            spawn_gorilla(state, [-0.5, 2.0].into())?;
+            spawn_gorilla(state, [-1.5, 5.0].into())?;
         }
         Ok(())
     }

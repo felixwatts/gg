@@ -1,3 +1,4 @@
+use crate::component::Dead;
 use recs::Ecs;
 use crate::network::RxChannel;
 use crate::network::TxChannel;
@@ -51,7 +52,7 @@ impl<TServer, TNetwork> System for ServerSystem<TServer, TNetwork>  where TServe
         self.new_client_buffer.clear();
         self.server.get_new_clients(&mut self.new_client_buffer);
         for new_client in self.new_client_buffer.drain(..) {
-            let gorilla = crate::system::gorilla::spawn_gorilla(state, [0.0, 0.0].into())?;
+            let gorilla = crate::system::gorilla::spawn_gorilla(state, [-1.5, 5.0].into())?;
             state.set(gorilla, Client(new_client))?;
         }
 
@@ -60,8 +61,11 @@ impl<TServer, TNetwork> System for ServerSystem<TServer, TNetwork>  where TServe
         state.collect_with(&component_filter!(Client<TNetwork>), &mut self.entity_buffer_1);
         for &client_entity in self.entity_buffer_1.iter() {
             let client_component = state.borrow_mut::<Client<TNetwork>>(client_entity).unwrap();
-            self.msg_buffer.clear();
-            client_component.0.dequeue(&mut self.msg_buffer)?;
+
+            if let Err(_) = client_component.0.dequeue(&mut self.msg_buffer) {
+                state.set(client_entity, Dead{})?;
+                continue;
+            }
 
             for msg in self.msg_buffer.iter() {
                 match msg {
