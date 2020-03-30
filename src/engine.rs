@@ -35,7 +35,7 @@ impl Engine {
             system.update(&mut self.state, context)?;
         }
 
-        self.teardown_dead_entities()?;
+        self.teardown_dead_entities(context)?;
 
         Ok(())
     }
@@ -71,18 +71,18 @@ impl Engine {
         }
     }
 
-    fn teardown_dead_entities(&mut self) -> GgResult {
+    fn teardown_dead_entities(&mut self, context: &Context) -> GgResult {
         let mut dead_entities = vec![];
         let filter = component_filter!(Dead);
         self.state.collect_with(&filter, &mut dead_entities);
         for entity in dead_entities.iter() {
-            self.teardown_entity(*entity)?;
+            self.teardown_entity(context, *entity)?;
         }
 
         Ok(())
     }
 
-    fn teardown_entity(&mut self, entity: recs::EntityId) -> GgResult {
+    fn teardown_entity(&mut self, context: &Context, entity: recs::EntityId) -> GgResult {
         // its possible for an entity in an Owns list to have been previously removed
         if !self.state.exists(entity) {
             return Ok(())
@@ -90,12 +90,12 @@ impl Engine {
 
         if let Ok(owns) = self.state.get::<Owns>(entity) {
             for &owned_entity in owns.0.iter() {
-                self.teardown_entity(owned_entity)?;
+                self.teardown_entity(context, owned_entity)?;
             }
         }
 
         for system in self.systems.iter_mut() {
-            system.teardown_entity(entity, &mut self.state)?;
+            system.teardown_entity(entity, &mut self.state, context)?;
         }
 
         self.state.destroy_entity(entity).unwrap();

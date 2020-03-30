@@ -63,7 +63,8 @@ impl<TNetwork> System for ClientSystem<TNetwork> where TNetwork: TxChannel<Clien
         context: &mut Context,
         keycode: KeyCode,
         _: KeyMods,
-        _: bool) {
+        repeat: bool) {
+            if repeat { return; }
             self.tx_key_state(keycode, context);
     }
 
@@ -72,7 +73,7 @@ impl<TNetwork> System for ClientSystem<TNetwork> where TNetwork: TxChannel<Clien
         _: &mut Ecs,
         context: &mut Context,
         keycode: KeyCode,
-        _: KeyMods) {
+        _: KeyMods) {            
             self.tx_key_state(keycode, context);
     }
 

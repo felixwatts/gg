@@ -1,3 +1,5 @@
+use ggez::event::KeyMods;
+use ggez::event::KeyCode;
 use crate::err::GgResult;
 use crate::system::system::System;
 use ggez::Context;
@@ -36,5 +38,19 @@ impl EventHandler for ClientSetup {
     fn draw(&mut self, context: &mut Context) -> GameResult{
         self.engine.draw(context)?;
         Ok(())
+    }
+
+    fn key_down_event(
+        &mut self,
+        context: &mut Context,
+        keycode: KeyCode,
+        keymod: KeyMods,
+        repeat: bool,
+    ) {
+        self.engine.key_down_event(context, keycode, keymod, repeat);
+    }
+
+    fn key_up_event(&mut self, context: &mut Context, keycode: KeyCode, keymod: KeyMods) {
+        self.engine.key_up_event(context, keycode, keymod);
     }
 }

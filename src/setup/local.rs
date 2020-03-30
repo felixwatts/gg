@@ -14,7 +14,7 @@ pub struct LocalSetup{
 impl LocalSetup{
     pub fn new(context: &mut ggez::Context) -> GgResult<LocalSetup>{
         let systems: Vec::<Box::<dyn System>> = vec![
-            Box::new(crate::system::gorilla::GorillaSystem{spawn_gorilla_on_init: true}),
+            Box::new(crate::system::gorilla::GorillaSystem{is_local: true}),
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::render::RenderSystem::new(context)?),
         ];

@@ -8,14 +8,13 @@ use crate::system::system::System;
 use nalgebra::Vector2;
 use crate::component::Focus;
 use crate::entity::*;
-use crate::component::Dead;
 use crate::component::Gorilla;
 use crate::component::body::Body;
 use crate::err::GgResult;
 use recs::EntityId;
 
 pub struct GorillaSystem {
-    pub spawn_gorilla_on_init: bool
+    pub is_local: bool
 }
 
 pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GgResult<EntityId> {
@@ -25,8 +24,6 @@ pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GgResult<EntityI
     ecs.set(gorilla, Gorilla{button_state:[false, false]}).unwrap();
     ecs.set(gorilla, Body::new(loc, Vector2::zeros(), Vector2::new(0.0, -10.0))).unwrap();
     ecs.set(gorilla, Network).unwrap();
-
-    println!("spawn gorilla");
 
     Ok(gorilla)
 }
@@ -67,7 +64,7 @@ impl System for GorillaSystem {
         spawn_anchor(state, [3.0, -3.0].into())?;
         spawn_anchor(state, [3.0, 3.0].into())?;
 
-        if self.spawn_gorilla_on_init {
+        if self.is_local {
             spawn_gorilla(state, [-1.5, 5.0].into())?;
         }
 
@@ -83,8 +80,8 @@ impl System for GorillaSystem {
         state.collect_with(&filter, &mut ids);
         for &entity in ids.iter() {
 
-            if state.borrow::<Body>(entity).unwrap().get_loc().y < -30.0 {
-                state.set(entity, Dead).unwrap();
+            if state.borrow::<Body>(entity).unwrap().get_loc().y < -20.0 {
+                state.set(entity, Body::new([-1.5, 5.0].into(), Vector2::zeros(), Vector2::new(0.0, -10.0))).unwrap();
             }
 
             let gorilla = state.get::<Gorilla>(entity).unwrap();
@@ -95,13 +92,17 @@ impl System for GorillaSystem {
                 self.try_remove_rope(state, entity);
             }
 
-            if gorilla.button_state[1] {
+            if gorilla.button_state[1] {                
                 if let Ok(body) = state.borrow_mut::<Body>(entity) {
-                    body.set_acc(Vector2::new(0.0, -20.0));
+                    if body.get_acc().y > -15.0 {
+                        body.set_acc(Vector2::new(0.0, -20.0));
+                    }
                 }
             } else {
                 if let Ok(body) = state.borrow_mut::<Body>(entity) {
-                    body.set_acc(Vector2::new(0.0, -10.0));
+                    if body.get_acc().y < -15.0 {
+                        body.set_acc(Vector2::new(0.0, -10.0));
+                    }
                 }
             }
 
@@ -115,8 +116,9 @@ impl System for GorillaSystem {
         keycode: KeyCode,
         _: KeyMods,
         _: bool) {
-            update_button_state(keycode, state, context);
-
+            if self.is_local {
+                update_button_state(keycode, state, context);
+            }
         }
 
     fn key_up(&mut self,
@@ -124,7 +126,9 @@ impl System for GorillaSystem {
         context: &mut Context,
         keycode: KeyCode,
         _: KeyMods) {
-            update_button_state(keycode, state, context);
+            if self.is_local {
+                update_button_state(keycode, state, context);
+            }
         }
 }
 

@@ -19,7 +19,7 @@ pub trait System {
         Ok(())
     }
 
-    fn teardown_entity(&mut self, _: EntityId, _: &mut Ecs) -> GgResult {
+    fn teardown_entity(&mut self, _: EntityId, _: &mut Ecs, _: &Context) -> GgResult {
         Ok(())
     }
 

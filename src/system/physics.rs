@@ -6,6 +6,11 @@ use crate::err::GgResult;
 use ggez::Context;
 use crate::system::system::System;
 
+// pub enum PhysicsTimeMode{
+//     AverageDelta,
+//     Fixed
+// }
+
 pub struct PhysicsSystem {
 }
 
@@ -31,10 +36,6 @@ impl System for PhysicsSystem {
             }
         };
 
-        Ok(())
-    }
-
-    fn teardown_entity(&mut self, _: EntityId, _: &mut Ecs) -> GgResult {
         Ok(())
     }
 }

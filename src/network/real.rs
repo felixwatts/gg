@@ -36,13 +36,17 @@ pub struct RealNetwork<TTx, TRx>{
 fn rx_loop<TRx>(
     mut tcp_stream: TcpStream, 
     rx_q_in: Sender<TRx>
-) -> GgResult where TRx: DeserializeOwned {
+) -> GgResult where TRx: DeserializeOwned + std::fmt::Debug {
     let mut buffer = vec![0u8; 2048];
     loop {
         let msg_length = tcp_stream.read_u32::<byteorder::BigEndian>()?;
         let msg_buffer = &mut buffer[0..msg_length as usize];
         tcp_stream.read_exact(msg_buffer)?;
         let msg: TRx = serde_cbor::from_slice(msg_buffer)?;
+
+        #[cfg(debug)]
+        println!("<-- {:?} {}", &msg, msg_length);
+
         rx_q_in.send(msg)?;
     }
 }
@@ -50,20 +54,23 @@ fn rx_loop<TRx>(
 fn tx_loop<TTx>(
     mut tcp_stream: TcpStream, 
     tx_q_out: Receiver<TTx>
-) -> GgResult where TTx: Serialize {
+) -> GgResult where TTx: Serialize + std::fmt::Debug {
     loop {
         let msg = tx_q_out.recv()?;
         let msg_buffer = serde_cbor::to_vec(&msg)?;
         let msg_length = msg_buffer.len();
         tcp_stream.write_u32::<byteorder::BigEndian>(msg_length as u32)?;
         serde_cbor::to_writer(&mut tcp_stream, &msg)?;
+
+        #[cfg(debug)]
+        println!("--> {:?} {}", &msg, msg_length);
     }
 }
 
 impl<TTx, TRx> RealNetwork<TTx, TRx> 
     where 
-        TTx: 'static + Send + Serialize, 
-        TRx: 'static + Send + DeserializeOwned{
+        TTx: 'static + Send + Serialize + std::fmt::Debug, 
+        TRx: 'static + Send + DeserializeOwned + std::fmt::Debug{
 
     pub fn new(tcp_stream: TcpStream) -> GgResult<RealNetwork<TTx, TRx>> {
 
@@ -79,14 +86,20 @@ impl<TTx, TRx> RealNetwork<TTx, TRx>
 
         let tx_thread = std::thread::spawn(move || {
             let result = tx_loop(tx_stream, tx_q_in);
+            
+            #[cfg(debug)]
             println!("tx thread loop exited: {:?}", result);
+            
             tx_is_closed.store(true, Ordering::Relaxed);
             result
         });
 
         let rx_thread = std::thread::spawn(move || {
             let result = rx_loop(rx_stream, rx_q_out);
+
+            #[cfg(debug)]
             println!("rx thread loop exited: {:?}", result);
+
             rx_is_closed.store(true, Ordering::Relaxed);
             result
         });
@@ -189,6 +202,9 @@ impl RealServer {
 
             Ok(())
         });
+
+        println!("ggs is listening on 127.0.0.1:9001");
+
         Ok(RealServer {
             listen_thread,
             new_client_recv
