@@ -1,31 +1,27 @@
+use crate::context::TimerService;
 use recs::Ecs;
 use crate::component::Sprite;
 use crate::component::body::Body;
 use recs::EntityId;
 use crate::err::GgResult;
-use ggez::Context;
 use crate::system::system::System;
-
-// pub enum PhysicsTimeMode{
-//     AverageDelta,
-//     Fixed
-// }
 
 pub struct PhysicsSystem {
 }
 
-impl System for PhysicsSystem {
+impl<TContext> System<TContext> for PhysicsSystem where TContext: TimerService {
     fn update(
         &mut self, 
         state: &mut Ecs, 
-        context: &Context) -> GgResult {
+        context: &TContext) -> GgResult {
         let mut ids: Vec<EntityId> = Vec::new();
         let filter = component_filter!(Body);
         state.collect_with(&filter, &mut ids);
         for &entity in ids.iter() {
             let body : &mut Body = state.borrow_mut(entity).unwrap();
 
-            body.step(ggez::timer::average_delta(context).as_secs_f32());
+            let t_delta = context.average_delta().as_secs_f32();
+            body.step(t_delta); // ggez::timer::average_delta(context).as_secs_f32()
 
             let loc = body.get_loc().clone();
 

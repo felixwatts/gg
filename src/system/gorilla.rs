@@ -1,9 +1,9 @@
+use crate::context::InputService;
 use recs::Ecs;
 use ggez::event::KeyMods;
 use ggez::event::KeyCode;
 use crate::component::Network;
 use crate::component::Anchor;
-use ggez::Context;
 use crate::system::system::System;
 use nalgebra::Vector2;
 use crate::component::Focus;
@@ -40,15 +40,16 @@ pub fn spawn_anchor(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GgResult<EntityId
     Ok(anchor)
 }
 
-fn update_button_state(keycode: KeyCode, state: &mut Ecs, context: &Context) {
+fn update_button_state<TContext>(keycode: KeyCode, state: &mut Ecs, context: &TContext)
+    where TContext: InputService {
     match keycode {
         KeyCode::Space | KeyCode::Return => {
             let mut gorillas = vec![];
             state.collect_with(&component_filter!(Gorilla), &mut gorillas);
             if let Some(&gorilla) = gorillas.first() {
                 let button_state = [
-                    ggez::input::keyboard::is_key_pressed(context, KeyCode::Space),
-                    ggez::input::keyboard::is_key_pressed(context, KeyCode::Return)
+                    context.is_key_pressed(KeyCode::Space),
+                    context.is_key_pressed(KeyCode::Return),
                 ];
                 state.set(gorilla, Gorilla{button_state}).unwrap();
             } 
@@ -57,8 +58,8 @@ fn update_button_state(keycode: KeyCode, state: &mut Ecs, context: &Context) {
     }
 }
 
-impl System for GorillaSystem {
-    fn init(&mut self, state: &mut Ecs, _: &Context) -> GgResult {
+impl<TContext> System<TContext> for GorillaSystem where TContext: InputService {
+    fn init(&mut self, state: &mut Ecs, _: &TContext) -> GgResult {
     
         spawn_anchor(state, [-3.0, -3.0].into())?;
         spawn_anchor(state, [-3.0, 3.0].into())?;
@@ -76,7 +77,7 @@ impl System for GorillaSystem {
     fn update(
         &mut self, 
         state: &mut Ecs, 
-        _: &Context) -> GgResult {
+        _: &TContext) -> GgResult {
         let mut ids: Vec<EntityId> = Vec::new();
         let filter = component_filter!(Gorilla, Body);
         state.collect_with(&filter, &mut ids);
@@ -114,7 +115,7 @@ impl System for GorillaSystem {
 
     fn key_down(&mut self,
         state: &mut Ecs,
-        context: &mut Context,
+        context: &mut TContext,
         keycode: KeyCode,
         _: KeyMods,
         _: bool) {
@@ -125,7 +126,7 @@ impl System for GorillaSystem {
 
     fn key_up(&mut self,
         state: &mut Ecs,
-        context: &mut Context,
+        context: &mut TContext,
         keycode: KeyCode,
         _: KeyMods) {
             if self.is_local {

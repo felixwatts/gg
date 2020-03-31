@@ -9,8 +9,8 @@ use ggez::GameResult;
 use crate::network::sim::SimServerContainer;
 
 pub struct LocalClientServerSetup{
-    client_engine: Option<Engine>,
-    server_engine: Option<Engine>,
+    client_engine: Option<Engine<ggez::Context>>,
+    server_engine: Option<Engine<ggez::Context>>,
     network: SimServerContainer,
 }
 
@@ -26,14 +26,14 @@ impl LocalClientServerSetup {
         let mut server = result.network.get_server(latency);
         let client = server.connect();
 
-        let server_systems: Vec<Box<dyn System>> = vec![
+        let server_systems: Vec<Box<dyn System<ggez::Context>>> = vec![
             Box::new(crate::system::server::ServerSystem::new(server)?),
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::gorilla::GorillaSystem{is_local: false}),
         ];
         let server_engine = Engine::new(server_systems, context)?;
 
-        let client_systems: Vec<Box<dyn System>> = vec![
+        let client_systems: Vec<Box<dyn System<ggez::Context>>> = vec![
             Box::new(crate::system::client::ClientSystem::new(client)),
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::render::RenderSystem::new(context)?),
