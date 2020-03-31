@@ -193,7 +193,7 @@ pub struct RealServer {
 impl RealServer {
     pub fn new() -> GgResult<RealServer> {
         let (new_client_send, new_client_recv) = channel();
-        let listener = TcpListener::bind("127.0.0.1:9001")?;
+        let listener = TcpListener::bind("0.0.0.0:9001")?;
         let listen_thread = std::thread::spawn(move || {
             for stream in listener.incoming() {
                 let client = RealNetwork::<ServerMsg, ClientMsg>::new(stream.unwrap()).unwrap();
@@ -203,7 +203,7 @@ impl RealServer {
             Ok(())
         });
 
-        println!("ggs is listening on 127.0.0.1:9001");
+        println!("ggs is listening on port 9001");
 
         Ok(RealServer {
             listen_thread,

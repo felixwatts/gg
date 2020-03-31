@@ -16,7 +16,7 @@ pub struct ClientSetup {
 
 impl ClientSetup {
     pub fn new(context: &mut ggez::Context) -> GgResult<ClientSetup> {
-        let tcp_stream = TcpStream::connect("127.0.0.1:9001")?;
+        let tcp_stream = TcpStream::connect("35.176.233.5:9001")?;
         let network = RealNetwork::new(tcp_stream)?;
         let systems: Vec<Box<dyn System<ggez::Context>>> = vec![
             Box::new(ClientSystem::new(network)),

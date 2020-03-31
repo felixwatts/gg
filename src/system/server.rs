@@ -11,7 +11,6 @@ use crate::component::Network;
 use crate::component::Gorilla;
 use crate::network::{ClientMsg, ServerMsg};
 use crate::err::GgResult;
-use ggez::Context;
 use crate::system::system::System;
 use crate::component::Client;
 
