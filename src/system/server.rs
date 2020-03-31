@@ -53,9 +53,12 @@ impl<TServer, TNetwork> ServerSystem<TServer, TNetwork> where TServer: Server<TN
     }
 }
 
-impl<TServer, TNetwork> System for ServerSystem<TServer, TNetwork>  where TServer: Server<TNetwork>, TNetwork: 'static + TxChannel<ServerMsg> + RxChannel<ClientMsg> {
+impl<TServer, TNetwork, TContext> System<TContext> for ServerSystem<TServer, TNetwork>  
+    where 
+        TServer: Server<TNetwork>, 
+        TNetwork: 'static + TxChannel<ServerMsg> + RxChannel<ClientMsg> {
 
-    fn update(&mut self, state: &mut Ecs, _: &Context) -> GgResult {
+    fn update(&mut self, state: &mut Ecs, _: &TContext) -> GgResult {
 
         // process new clients
         self.new_client_buffer.clear();
@@ -141,7 +144,7 @@ impl<TServer, TNetwork> System for ServerSystem<TServer, TNetwork>  where TServe
         Ok(())
     }
 
-    fn teardown_entity(&mut self, entity: EntityId, state: &mut Ecs, _: &Context) -> GgResult {
+    fn teardown_entity(&mut self, entity: EntityId, state: &mut Ecs, _: &TContext) -> GgResult {
         if state.has::<Network>(entity).unwrap() {
             let msg = ServerMsg::Kill(entity.get_id_number());
             self.entity_buffer_1.clear();

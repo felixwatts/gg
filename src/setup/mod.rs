@@ -21,16 +21,10 @@ pub struct Setup<TSetup> where TSetup: EventHandler {
     game: TSetup,
 }
 
-pub fn new_server() -> GgResult<Setup<ServerSetup>>{
-    let (mut context, event_loop) = build_context()?;
-
-    let setup = ServerSetup::new(&mut context)?;
-
-    Ok(Setup{
-        context: context,
-        event_loop: event_loop,
-        game: setup
-    })
+pub fn new_server() -> GgResult<ServerSetup>{
+    let context = crate::context::server::ServerContext::new();
+    let setup = ServerSetup::new(context)?;
+    Ok(setup)
 }
 
 pub fn new_client() -> GgResult<Setup<ClientSetup>>{

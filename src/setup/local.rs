@@ -8,12 +8,12 @@ use ggez::event::EventHandler;
 use crate::engine::Engine;
 
 pub struct LocalSetup{
-    engine: Engine
+    engine: Engine<ggez::Context>
 }
 
 impl LocalSetup{
     pub fn new(context: &mut ggez::Context) -> GgResult<LocalSetup>{
-        let systems: Vec::<Box::<dyn System>> = vec![
+        let systems: Vec::<Box::<dyn System<ggez::Context>>> = vec![
             Box::new(crate::system::gorilla::GorillaSystem{is_local: true}),
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::render::RenderSystem::new(context)?),

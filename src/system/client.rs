@@ -7,18 +7,17 @@ use crate::err::GgResult;
 use recs::EntityId;
 use ggez::event::KeyMods;
 use ggez::event::KeyCode;
-use ggez::Context;
 use crate::system::system::System;
 use crate::network::ClientMsg;
 use std::collections::HashMap;
+use crate::context::InputService;
 
-pub struct ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg> {
+pub struct ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg>{
     server: TNetwork,
     network_entity_id_mapping: HashMap<u64, EntityId>
 }
 
-impl<TNetwork> ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg> {
-
+impl<TNetwork> ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg>{
     pub fn new(server: TNetwork) -> ClientSystem<TNetwork> {
         ClientSystem{
             server,
@@ -37,17 +36,17 @@ impl<TNetwork> ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxC
         }
     }
 
-    fn tx_key_state(
+    fn tx_key_state<TContext>(
         &mut self,
         keycode: KeyCode, 
-        context: &mut Context) 
-        where TNetwork: TxChannel::<ClientMsg> {
+        context: &mut TContext) 
+        where TContext: InputService {
         match keycode {
             KeyCode::Space | KeyCode::Return =>
             {
                 let key_state = [
-                    ggez::input::keyboard::is_key_pressed(context, KeyCode::Space),
-                    ggez::input::keyboard::is_key_pressed(context, KeyCode::Return),
+                    context.is_key_pressed(KeyCode::Space),
+                    context.is_key_pressed(KeyCode::Return)
                 ];
                 self.server.enqueue(ClientMsg::ButtonStateChange(key_state)).unwrap();
             },
@@ -56,11 +55,11 @@ impl<TNetwork> ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxC
     }
 }
 
-impl<TNetwork> System for ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg> {
+impl<TNetwork, TContext> System<TContext> for ClientSystem<TNetwork> where TContext: InputService, TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg> {
     fn key_down(
         &mut self,
         _: &mut Ecs,
-        context: &mut Context,
+        context: &mut TContext,
         keycode: KeyCode,
         _: KeyMods,
         repeat: bool) {
@@ -71,7 +70,7 @@ impl<TNetwork> System for ClientSystem<TNetwork> where TNetwork: TxChannel<Clien
     fn key_up(
         &mut self,
         _: &mut Ecs,
-        context: &mut Context,
+        context: &mut TContext,
         keycode: KeyCode,
         _: KeyMods) {            
             self.tx_key_state(keycode, context);
@@ -80,7 +79,7 @@ impl<TNetwork> System for ClientSystem<TNetwork> where TNetwork: TxChannel<Clien
     fn update(
         &mut self, 
         state: &mut Ecs, 
-        _: &Context) -> GgResult {
+        _: &TContext) -> GgResult {
 
         // read all network entities
         let mut buffer = vec![];

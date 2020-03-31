@@ -1,3 +1,4 @@
+use crate::network::real::RealNetwork;
 use ggez::event::KeyMods;
 use ggez::event::KeyCode;
 use crate::err::GgResult;
@@ -7,17 +8,18 @@ use ggez::event::EventHandler;
 use crate::engine::Engine;
 use ggez::GameResult;
 use std::net::TcpStream;
+use crate::system::client::ClientSystem;
 
 pub struct ClientSetup {
-    engine: Engine
+    engine: Engine<ggez::Context>
 }
 
 impl ClientSetup {
     pub fn new(context: &mut ggez::Context) -> GgResult<ClientSetup> {
         let tcp_stream = TcpStream::connect("127.0.0.1:9001")?;
-        let network = crate::network::real::RealNetwork::new(tcp_stream)?;
-        let systems: Vec<Box<dyn System>> = vec![
-            Box::new(crate::system::client::ClientSystem::new(network)),
+        let network = RealNetwork::new(tcp_stream)?;
+        let systems: Vec<Box<dyn System<ggez::Context>>> = vec![
+            Box::new(ClientSystem::new(network)),
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::render::RenderSystem::new(context)?),
         ];

@@ -3,6 +3,7 @@ mod component;
 mod engine;
 mod entity;
 mod network;
+mod context;
 pub mod setup;
 pub mod err;
 
