@@ -1,31 +1,35 @@
+use crate::input::KeyMapping;
+use crate::colors::Color;
 use crate::component::Keyboard;
-use crate::input::default_key_mapping;
 use recs::Ecs;
 use crate::component::Network;
 use crate::component::Anchor;
 use crate::system::system::System;
 use nalgebra::Vector2;
 use crate::component::Focus;
-use crate::entity::*;
 use crate::component::body::Body;
 use crate::component::gorilla::Gorilla;
 use crate::err::GgResult;
 use recs::EntityId;
 use crate::input::Button;
+use crate::component::sprite::Sprite;
+use crate::colors::WHITE;
 
 pub struct GorillaSystem {
-    pub is_local: bool
 }
 
-pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>, with_focus: bool) -> GgResult<EntityId> {
+pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>, color: Color, key_mapping: Option<KeyMapping>, with_focus: bool) -> GgResult<EntityId> {
     let gorilla = ecs.create_entity();
-    with_sprite(ecs, gorilla, [1.0, 0.0, 0.0, 1.0], [0.3, 0.3].into())?;    
-    ecs.set(gorilla, Gorilla::new()).unwrap();
-    ecs.set(gorilla, Body::new(loc, Vector2::zeros(), Vector2::new(0.0, -10.0))).unwrap();
-    ecs.set(gorilla, Network).unwrap();
+    ecs.set(gorilla, Sprite::new(color, [0.3, 0.3].into()))?;  
+    ecs.set(gorilla, Gorilla::new(loc.clone()))?;
+    ecs.set(gorilla, Body::new(loc, Vector2::zeros(), Vector2::new(0.0, -10.0)))?;
+    ecs.set(gorilla, Network)?;
     if with_focus {
-        ecs.set(gorilla, Focus).unwrap();
-        ecs.set(gorilla, Keyboard(default_key_mapping())).unwrap();
+        ecs.set(gorilla, Focus)?;
+    }
+
+    if let Some(km) = key_mapping {
+        ecs.set(gorilla, Keyboard(km)).unwrap();
     }
 
     Ok(gorilla)
@@ -33,10 +37,10 @@ pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>, with_focus: bool) -
 
 pub fn spawn_anchor(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GgResult<EntityId> {
     let anchor = ecs.create_entity();
-    ecs.set(anchor, Anchor).unwrap();
-    ecs.set(anchor, Body::new(loc, Vector2::zeros(), Vector2::zeros())).unwrap();
-    with_sprite(ecs, anchor, [0.0, 1.0, 1.0, 1.0], [0.1, 0.1].into())?;
-    ecs.set(anchor, Network).unwrap();
+    ecs.set(anchor, Anchor)?;
+    ecs.set(anchor, Body::new(loc, Vector2::zeros(), Vector2::zeros()))?;
+    ecs.set(anchor, Sprite::new(WHITE, [0.1, 0.1].into()))?;
+    ecs.set(anchor, Network)?;
 
     Ok(anchor)
 }
@@ -49,10 +53,6 @@ impl<TContext> System<TContext> for GorillaSystem {
         spawn_anchor(state, [0.0, 0.0].into())?;
         spawn_anchor(state, [3.0, -3.0].into())?;
         spawn_anchor(state, [3.0, 3.0].into())?;
-
-        if self.is_local {
-            spawn_gorilla(state, [-1.5, 5.0].into(), true)?;
-        }
 
         Ok(())
     }
@@ -67,7 +67,8 @@ impl<TContext> System<TContext> for GorillaSystem {
         for &entity in ids.iter() {
 
             if state.borrow::<Body>(entity).unwrap().get_loc().y < -20.0 {
-                state.set(entity, Body::new([-1.5, 5.0].into(), Vector2::zeros(), Vector2::new(0.0, -10.0))).unwrap();
+                let spawn_location = state.borrow::<Gorilla>(entity).unwrap().spawn_location.clone();
+                state.set(entity, Body::new(spawn_location.into(), Vector2::zeros(), Vector2::new(0.0, -10.0))).unwrap();
             }
 
             let gorilla = state.borrow_mut::<Gorilla>(entity).unwrap();

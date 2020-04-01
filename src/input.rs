@@ -25,6 +25,13 @@ pub struct InputEvent{
 
 pub type KeyMapping = HashMap<KeyCode, Button>;
 
+pub fn new_key_mapping(btn1: KeyCode, btn2: KeyCode) -> KeyMapping {
+    [
+        (btn1, Button::One),
+        (btn2, Button::Two)
+    ].iter().cloned().collect()
+}
+
 pub fn default_key_mapping() -> KeyMapping{
     [
         (KeyCode::Space, Button::One),

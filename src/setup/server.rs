@@ -14,7 +14,7 @@ impl ServerSetup{
         let systems: Vec<Box<dyn System<ServerContext>>> = vec![
             Box::new(crate::system::server::ServerSystem::new(server)?),
             Box::new(crate::system::physics::PhysicsSystem{}),
-            Box::new(crate::system::gorilla::GorillaSystem{is_local: false}),
+            Box::new(crate::system::gorilla::GorillaSystem{}),
         ];
         let engine = Engine::new(systems, None, &mut context)?;
         Ok(ServerSetup{

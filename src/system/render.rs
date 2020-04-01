@@ -1,6 +1,6 @@
 use crate::context::GfxService;
 use crate::component::Focus;
-use crate::component::Sprite;
+use crate::component::sprite::Sprite;
 use ggez::graphics::DrawParam;
 use crate::system::system::System;
 use recs::{Ecs, EntityId};

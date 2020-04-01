@@ -2,7 +2,7 @@ pub mod sim;
 pub mod real;
 
 use crate::input::InputEvent;
-use crate::component::Sprite;
+use crate::component::sprite::Sprite;
 use crate::component::body::Body;
 use crate::err::GgResult;
 use serde::Serialize;

@@ -29,7 +29,7 @@ impl LocalClientServerSetup {
         let server_systems: Vec<Box<dyn System<ggez::Context>>> = vec![
             Box::new(crate::system::server::ServerSystem::new(server)?),
             Box::new(crate::system::physics::PhysicsSystem{}),
-            Box::new(crate::system::gorilla::GorillaSystem{is_local: false}),
+            Box::new(crate::system::gorilla::GorillaSystem{}),
         ];
         let server_engine = Engine::new(server_systems, None, context)?;
 

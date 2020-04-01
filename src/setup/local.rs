@@ -1,3 +1,4 @@
+use crate::colors::{RED, CYAN};
 use crate::err::GgResult;
 use crate::system::system::System;
 use ggez::GameResult;
@@ -13,14 +14,22 @@ pub struct LocalSetup{
 
 impl LocalSetup{
     pub fn new(context: &mut ggez::Context) -> GgResult<LocalSetup>{
+
+        let init_systems: Vec::<Box::<dyn System<ggez::Context>>> = vec![
+            Box::new(crate::system::local_init::LocalInitSystem(vec![
+                (RED, [-1.5, 5.0], KeyCode::LControl, KeyCode::LAlt),
+                (CYAN, [1.5, 5.0], KeyCode::Left, KeyCode::Right)
+            ])),
+        ];
+
         let systems: Vec::<Box::<dyn System<ggez::Context>>> = vec![
             Box::new(crate::system::keyboard::KeyboardSystem{}),
-            Box::new(crate::system::gorilla::GorillaSystem{is_local: true}),
+            Box::new(crate::system::gorilla::GorillaSystem{}),
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::render::RenderSystem::new(context)?),
         ];
 
-        let engine = Engine::new(systems, None, context)?;
+        let engine = Engine::new(systems, Some(init_systems), context)?;
     
         Ok(LocalSetup{
             engine
