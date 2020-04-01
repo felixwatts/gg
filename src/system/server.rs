@@ -1,3 +1,5 @@
+use crate::system::gorilla::spawn_anchor;
+use crate::colors::Colors;
 use crate::component::Dead;
 use recs::Ecs;
 use crate::network::RxChannel;
@@ -5,7 +7,7 @@ use crate::network::TxChannel;
 use crate::network::Server;
 use crate::component::Focus;
 use recs::EntityId;
-use crate::component::Sprite;
+use crate::component::sprite::Sprite;
 use crate::component::body::Body;
 use crate::component::Network;
 use crate::component::gorilla::Gorilla;
@@ -19,7 +21,8 @@ pub struct ServerSystem<TServer, TNetwork> where TServer: Server<TNetwork>, TNet
     new_client_buffer: Vec::<TNetwork>,
     entity_buffer_1: Vec::<EntityId>,
     entity_buffer_2: Vec::<EntityId>,
-    msg_buffer: Vec::<ClientMsg>
+    msg_buffer: Vec::<ClientMsg>,
+    colors: Colors
 }
 
 impl<TServer, TNetwork> ServerSystem<TServer, TNetwork> where TServer: Server<TNetwork>, TNetwork: 'static + TxChannel<ServerMsg> + RxChannel<ClientMsg> {
@@ -29,7 +32,8 @@ impl<TServer, TNetwork> ServerSystem<TServer, TNetwork> where TServer: Server<TN
             new_client_buffer: vec![],
             entity_buffer_1: vec![],
             entity_buffer_2: vec![],
-            msg_buffer: vec![]
+            msg_buffer: vec![],
+            colors: Colors::new()
         })
     }
 
@@ -57,13 +61,24 @@ impl<TServer, TNetwork, TContext> System<TContext> for ServerSystem<TServer, TNe
         TServer: Server<TNetwork>, 
         TNetwork: 'static + TxChannel<ServerMsg> + RxChannel<ClientMsg> {
 
+    fn init(&mut self, state: &mut Ecs, _: &TContext) -> GgResult {
+
+        spawn_anchor(state, [-3.0, -3.0].into())?;
+        spawn_anchor(state, [-3.0, 3.0].into())?;
+        spawn_anchor(state, [0.0, 0.0].into())?;
+        spawn_anchor(state, [3.0, -3.0].into())?;
+        spawn_anchor(state, [3.0, 3.0].into())?;
+
+        Ok(())
+    }
+
     fn update(&mut self, state: &mut Ecs, _: &TContext) -> GgResult {
 
         // process new clients
         self.new_client_buffer.clear();
         self.server.get_new_clients(&mut self.new_client_buffer);
         for mut new_client in self.new_client_buffer.drain(..) {
-            let client_entity = crate::system::gorilla::spawn_gorilla(state, [-1.5, 5.0].into(), false)?;
+            let client_entity = crate::system::gorilla::spawn_gorilla(state, [-1.5, 5.0].into(), self.colors.next(), None, false)?;
 
             let msg = ServerMsg::SetFocus(client_entity.get_id_number());
             new_client.enqueue(msg)?;

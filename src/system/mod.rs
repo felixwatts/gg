@@ -5,3 +5,4 @@ pub mod physics;
 pub mod client;
 pub mod server;
 pub mod keyboard;
+pub mod local_init;

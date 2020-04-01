@@ -1,10 +1,10 @@
 use crate::context::TimerService;
 use recs::Ecs;
-use crate::component::Sprite;
 use crate::component::body::Body;
 use recs::EntityId;
 use crate::err::GgResult;
 use crate::system::system::System;
+use crate::component::sprite::Sprite;
 
 pub struct PhysicsSystem {
 }
@@ -21,7 +21,7 @@ impl<TContext> System<TContext> for PhysicsSystem where TContext: TimerService {
             let body : &mut Body = state.borrow_mut(entity).unwrap();
 
             let t_delta = context.average_delta().as_secs_f32();
-            body.step(t_delta); // ggez::timer::average_delta(context).as_secs_f32()
+            body.step(t_delta);
 
             let loc = body.get_loc().clone();
 
