@@ -1,17 +1,17 @@
-use crate::context::InputService;
+use crate::component::Keyboard;
+use crate::input::default_key_mapping;
 use recs::Ecs;
-use ggez::event::KeyMods;
-use ggez::event::KeyCode;
 use crate::component::Network;
 use crate::component::Anchor;
 use crate::system::system::System;
 use nalgebra::Vector2;
 use crate::component::Focus;
 use crate::entity::*;
-use crate::component::Gorilla;
 use crate::component::body::Body;
+use crate::component::gorilla::Gorilla;
 use crate::err::GgResult;
 use recs::EntityId;
+use crate::input::Button;
 
 pub struct GorillaSystem {
     pub is_local: bool
@@ -20,11 +20,12 @@ pub struct GorillaSystem {
 pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>, with_focus: bool) -> GgResult<EntityId> {
     let gorilla = ecs.create_entity();
     with_sprite(ecs, gorilla, [1.0, 0.0, 0.0, 1.0], [0.3, 0.3].into())?;    
-    ecs.set(gorilla, Gorilla{button_state:[false, false]}).unwrap();
+    ecs.set(gorilla, Gorilla::new()).unwrap();
     ecs.set(gorilla, Body::new(loc, Vector2::zeros(), Vector2::new(0.0, -10.0))).unwrap();
     ecs.set(gorilla, Network).unwrap();
     if with_focus {
         ecs.set(gorilla, Focus).unwrap();
+        ecs.set(gorilla, Keyboard(default_key_mapping())).unwrap();
     }
 
     Ok(gorilla)
@@ -40,25 +41,7 @@ pub fn spawn_anchor(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GgResult<EntityId
     Ok(anchor)
 }
 
-fn update_button_state<TContext>(keycode: KeyCode, state: &mut Ecs, context: &TContext)
-    where TContext: InputService {
-    match keycode {
-        KeyCode::Space | KeyCode::Return => {
-            let mut gorillas = vec![];
-            state.collect_with(&component_filter!(Gorilla), &mut gorillas);
-            if let Some(&gorilla) = gorillas.first() {
-                let button_state = [
-                    context.is_key_pressed(KeyCode::Space),
-                    context.is_key_pressed(KeyCode::Return),
-                ];
-                state.set(gorilla, Gorilla{button_state}).unwrap();
-            } 
-        },
-        _ => {}
-    }
-}
-
-impl<TContext> System<TContext> for GorillaSystem where TContext: InputService {
+impl<TContext> System<TContext> for GorillaSystem {
     fn init(&mut self, state: &mut Ecs, _: &TContext) -> GgResult {
     
         spawn_anchor(state, [-3.0, -3.0].into())?;
@@ -87,52 +70,30 @@ impl<TContext> System<TContext> for GorillaSystem where TContext: InputService {
                 state.set(entity, Body::new([-1.5, 5.0].into(), Vector2::zeros(), Vector2::new(0.0, -10.0))).unwrap();
             }
 
-            let gorilla = state.get::<Gorilla>(entity).unwrap();
-
-            if gorilla.button_state[0] {
-                self.try_add_rope(state, entity);
-            } else {
-                self.try_remove_rope(state, entity);
-            }
-
-            if gorilla.button_state[1] {                
-                if let Ok(body) = state.borrow_mut::<Body>(entity) {
-                    if body.get_acc().y > -15.0 {
-                        body.set_acc(Vector2::new(0.0, -20.0));
+            let gorilla = state.borrow_mut::<Gorilla>(entity).unwrap();
+            let mut events = vec![];
+            events.extend(gorilla.input_events.drain(..));
+            for input_event in events {
+                match input_event.button {
+                    Button::One =>
+                        match input_event.is_down {
+                            true => self.try_add_rope(state, entity),
+                            false => self.try_remove_rope(state, entity)
+                        }
+                    ,
+                    Button::Two => {
+                        let body = state.borrow_mut::<Body>(entity)?;
+                        match input_event.is_down {
+                            true => body.set_acc(Vector2::new(0.0, -20.0)),
+                            false => body.set_acc(Vector2::new(0.0, -10.0))
+                        }
                     }
-                }
-            } else {
-                if let Ok(body) = state.borrow_mut::<Body>(entity) {
-                    if body.get_acc().y < -15.0 {
-                        body.set_acc(Vector2::new(0.0, -10.0));
-                    }
-                }
+                    
+                };
             }
-
         }
         Ok(())
     }
-
-    fn key_down(&mut self,
-        state: &mut Ecs,
-        context: &mut TContext,
-        keycode: KeyCode,
-        _: KeyMods,
-        _: bool) {
-            if self.is_local {
-                update_button_state(keycode, state, context);
-            }
-        }
-
-    fn key_up(&mut self,
-        state: &mut Ecs,
-        context: &mut TContext,
-        keycode: KeyCode,
-        _: KeyMods) {
-            if self.is_local {
-                update_button_state(keycode, state, context);
-            }
-        }
 }
 
 impl GorillaSystem {

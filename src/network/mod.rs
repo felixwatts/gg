@@ -1,6 +1,7 @@
 pub mod sim;
 pub mod real;
 
+use crate::input::InputEvent;
 use crate::component::Sprite;
 use crate::component::body::Body;
 use crate::err::GgResult;
@@ -40,7 +41,7 @@ pub enum ServerMsg{
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub enum ClientMsg{
-    ButtonStateChange([bool; 2]),
+    Input(InputEvent),
     #[cfg(test)]
     Test(u32)
 }

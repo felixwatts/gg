@@ -2,7 +2,9 @@ mod planar_body;
 mod radial_body;
 
 pub mod body;
+pub mod gorilla;
 
+use crate::input::KeyMapping;
 use crate::network::ClientMsg;
 use crate::network::RxChannel;
 use crate::network::ServerMsg;
@@ -33,11 +35,8 @@ pub struct Sprite{
 #[derive(Clone)]
 pub struct Focus;
 
-#[derive(Clone)]
-pub struct Gorilla{
-    pub button_state: [bool; 2]
-}
-
 pub struct Anchor;
 
 pub struct Network;
+
+pub struct Keyboard(pub KeyMapping);

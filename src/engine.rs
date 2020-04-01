@@ -13,11 +13,17 @@ pub struct Engine<TContext>{
 
 impl<TContext> Engine<TContext> {
 
-    pub fn new(systems: Vec<Box<dyn System<TContext>>>, context: &mut TContext) -> GgResult<Engine<TContext>> {
+    pub fn new(systems: Vec<Box<dyn System<TContext>>>, init_systems: Option<Vec<Box<dyn System<TContext>>>>, context: &mut TContext) -> GgResult<Engine<TContext>> {
         let mut engine = Engine{
             state: Ecs::new(),
             systems
         };
+
+        if let Some(mut systems) = init_systems {
+            for mut system in systems.drain(..) {
+                system.init(&mut engine.state, context)?;
+            }
+        }
 
         for system in engine.systems.iter_mut() {
             system.init(&mut engine.state, context)?;

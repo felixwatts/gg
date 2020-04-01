@@ -6,6 +6,7 @@ mod network;
 mod context;
 pub mod setup;
 pub mod err;
+mod input;
 
 extern crate nalgebra;
 extern crate ggez;

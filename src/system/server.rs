@@ -8,7 +8,7 @@ use recs::EntityId;
 use crate::component::Sprite;
 use crate::component::body::Body;
 use crate::component::Network;
-use crate::component::Gorilla;
+use crate::component::gorilla::Gorilla;
 use crate::network::{ClientMsg, ServerMsg};
 use crate::err::GgResult;
 use crate::system::system::System;
@@ -104,11 +104,11 @@ impl<TServer, TNetwork, TContext> System<TContext> for ServerSystem<TServer, TNe
                 continue;
             }
 
-            for msg in self.msg_buffer.iter() {
+            for msg in self.msg_buffer.drain(..) {
                 match msg {
-                    ClientMsg::ButtonStateChange(m) => {
+                    ClientMsg::Input(input_event) => {
                         let gorilla_component = state.borrow_mut::<Gorilla>(client_entity).unwrap();
-                        gorilla_component.button_state = *m;
+                        gorilla_component.input_events.push(input_event);
                     },
                     #[cfg(test)]
                     ClientMsg::Test(_) => {}

@@ -1,3 +1,5 @@
+use crate::input::default_key_mapping;
+use crate::input::InputEvent;
 use recs::Ecs;
 use crate::network::RxChannel;
 use crate::network::TxChannel;
@@ -10,18 +12,20 @@ use ggez::event::KeyCode;
 use crate::system::system::System;
 use crate::network::ClientMsg;
 use std::collections::HashMap;
-use crate::context::InputService;
+use crate::input::{KeyMapping};
 
 pub struct ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg>{
     server: TNetwork,
-    network_entity_id_mapping: HashMap<u64, EntityId>
+    network_entity_id_mapping: HashMap<u64, EntityId>,
+    key_mapping: KeyMapping
 }
 
 impl<TNetwork> ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg>{
     pub fn new(server: TNetwork) -> ClientSystem<TNetwork> {
         ClientSystem{
             server,
-            network_entity_id_mapping: HashMap::<u64, EntityId>::new()
+            network_entity_id_mapping: HashMap::<u64, EntityId>::new(),
+            key_mapping: default_key_mapping()
         }
     }
 
@@ -35,45 +39,38 @@ impl<TNetwork> ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxC
             client_id
         }
     }
-
-    fn tx_key_state<TContext>(
-        &mut self,
-        keycode: KeyCode, 
-        context: &mut TContext) 
-        where TContext: InputService {
-        match keycode {
-            KeyCode::Space | KeyCode::Return =>
-            {
-                let key_state = [
-                    context.is_key_pressed(KeyCode::Space),
-                    context.is_key_pressed(KeyCode::Return)
-                ];
-                self.server.enqueue(ClientMsg::ButtonStateChange(key_state)).unwrap();
-            },
-            _ => {}
-        }
-    }
 }
 
-impl<TNetwork, TContext> System<TContext> for ClientSystem<TNetwork> where TContext: InputService, TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg> {
+impl<TNetwork, TContext> System<TContext> for ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg> {
     fn key_down(
         &mut self,
         _: &mut Ecs,
-        context: &mut TContext,
+        _: &mut TContext,
         keycode: KeyCode,
         _: KeyMods,
         repeat: bool) {
             if repeat { return; }
-            self.tx_key_state(keycode, context);
+
+            match self.key_mapping.get(&keycode) {
+                Some(&button) => {
+                    self.server.enqueue(ClientMsg::Input(InputEvent{button, is_down: true})).unwrap();
+                },
+                None => {}
+            }
     }
 
     fn key_up(
         &mut self,
         _: &mut Ecs,
-        context: &mut TContext,
+        _: &mut TContext,
         keycode: KeyCode,
         _: KeyMods) {            
-            self.tx_key_state(keycode, context);
+            match self.key_mapping.get(&keycode) {
+                Some(&button) => {
+                    self.server.enqueue(ClientMsg::Input(InputEvent{button, is_down: false})).unwrap();
+                },
+                None => {}
+            }
     }
 
     fn update(

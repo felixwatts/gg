@@ -31,14 +31,14 @@ impl LocalClientServerSetup {
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::gorilla::GorillaSystem{is_local: false}),
         ];
-        let server_engine = Engine::new(server_systems, context)?;
+        let server_engine = Engine::new(server_systems, None, context)?;
 
         let client_systems: Vec<Box<dyn System<ggez::Context>>> = vec![
             Box::new(crate::system::client::ClientSystem::new(client)),
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::render::RenderSystem::new(context)?),
         ];
-        let client_engine = Engine::new(client_systems, context)?;
+        let client_engine = Engine::new(client_systems, None, context)?;
 
         result.client_engine = Some(client_engine);
         result.server_engine = Some(server_engine);
