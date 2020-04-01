@@ -6,7 +6,6 @@ use ggez::graphics::Color;
 use ggez::graphics::Rect;
 use ggez::graphics::spritebatch::SpriteBatch;
 use ggez::graphics::DrawParam;
-use ggez::input::keyboard::KeyCode;
 use std::time::Duration;
 
 pub trait TimerService {
@@ -19,8 +18,4 @@ pub trait GfxService {
     fn clear(&mut self, color: Color);
     fn draw(&mut self, sprite_batch: &SpriteBatch, draw_param: DrawParam) -> GgResult;
     fn present(&mut self) -> GgResult;
-}
-
-pub trait InputService {
-    fn is_key_pressed(&self, key_code: KeyCode) -> bool;
 }

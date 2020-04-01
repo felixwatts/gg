@@ -51,13 +51,6 @@ impl Body {
         }
     }
 
-    pub fn get_acc(&self) -> Vector2::<f32> {
-        match self {
-            Body::Planar(b) => b.accel,
-            Body::Radial(b) => b.accel
-        }
-    }
-
     pub fn set_acc(&mut self, acc: Vector2::<f32>) {
         match self {
             Body::Planar(b) => { b.accel = acc; b.keyframe = true; }

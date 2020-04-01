@@ -27,10 +27,10 @@ pub fn new_server() -> GgResult<ServerSetup>{
     Ok(setup)
 }
 
-pub fn new_client() -> GgResult<Setup<ClientSetup>>{
+pub fn new_client(server_addr: &String) -> GgResult<Setup<ClientSetup>>{
     let (mut context, event_loop) = build_context()?;
 
-    let setup = ClientSetup::new(&mut context)?;
+    let setup = ClientSetup::new(&mut context, server_addr)?;
 
     Ok(Setup{
         context: context,

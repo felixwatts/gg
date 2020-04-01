@@ -15,15 +15,15 @@ pub struct ClientSetup {
 }
 
 impl ClientSetup {
-    pub fn new(context: &mut ggez::Context) -> GgResult<ClientSetup> {
-        let tcp_stream = TcpStream::connect("35.176.233.5:9001")?;
+    pub fn new(context: &mut ggez::Context, server_addr: &String) -> GgResult<ClientSetup> {
+        let tcp_stream = TcpStream::connect(server_addr)?;
         let network = RealNetwork::new(tcp_stream)?;
         let systems: Vec<Box<dyn System<ggez::Context>>> = vec![
             Box::new(ClientSystem::new(network)),
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::render::RenderSystem::new(context)?),
         ];
-        let engine = Engine::new(systems, context)?;
+        let engine = Engine::new(systems, None, context)?;
 
         Ok(ClientSetup{
             engine

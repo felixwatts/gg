@@ -1,7 +1,5 @@
 mod timer;
 
-use ggez::event::KeyCode;
-use crate::context::InputService;
 use std::time::Duration;
 use crate::context::TimerService;
 use crate::context::server::timer::TimeContext;
@@ -25,11 +23,5 @@ impl ServerContext{
 impl TimerService for ServerContext {
     fn average_delta(&self) -> Duration{
         self.timer.average_delta()
-    }
-}
-
-impl InputService for ServerContext {
-    fn is_key_pressed(&self, _: KeyCode) -> bool{
-        false
     }
 }

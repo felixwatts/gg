@@ -16,7 +16,7 @@ impl ServerSetup{
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::gorilla::GorillaSystem{is_local: false}),
         ];
-        let engine = Engine::new(systems, &mut context)?;
+        let engine = Engine::new(systems, None, &mut context)?;
         Ok(ServerSetup{
             engine,
             context

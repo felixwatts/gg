@@ -1,7 +1,5 @@
 use std::time::Duration;
 use crate::context::TimerService;
-use crate::context::InputService;
-use ggez::event::KeyCode;
 use ggez::graphics::DrawParam;
 use ggez::graphics::spritebatch::SpriteBatch;
 use ggez::graphics::Color;
@@ -38,11 +36,5 @@ impl GfxService for ggez::Context {
     fn present(&mut self) -> GgResult {
         ggez::graphics::present(self)?;
         Ok(())
-    }
-}
-
-impl InputService for ggez::Context {
-    fn is_key_pressed(&self, key_code: KeyCode) -> bool {
-        ggez::input::keyboard::is_key_pressed(self, key_code)
     }
 }

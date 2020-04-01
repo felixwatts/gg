@@ -14,12 +14,13 @@ pub struct LocalSetup{
 impl LocalSetup{
     pub fn new(context: &mut ggez::Context) -> GgResult<LocalSetup>{
         let systems: Vec::<Box::<dyn System<ggez::Context>>> = vec![
+            Box::new(crate::system::keyboard::KeyboardSystem{}),
             Box::new(crate::system::gorilla::GorillaSystem{is_local: true}),
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::render::RenderSystem::new(context)?),
         ];
 
-        let engine = Engine::new(systems, context)?;
+        let engine = Engine::new(systems, None, context)?;
     
         Ok(LocalSetup{
             engine
