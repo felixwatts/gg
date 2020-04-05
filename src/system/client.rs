@@ -100,6 +100,9 @@ impl<TNetwork, TContext> System<TContext> for ClientSystem<TNetwork> where TNetw
                     self.network_entity_id_mapping.remove(&server_id);
                     state.destroy_entity(client_id).unwrap();
                 },
+                ServerMsg::Ping(tx_time) => {
+                    self.server.enqueue(ClientMsg::Pong(tx_time))?;
+                }
                 #[cfg(test)]
                 ServerMsg::Test(_) => {}
             }
