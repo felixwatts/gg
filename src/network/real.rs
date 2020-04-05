@@ -89,7 +89,7 @@ impl<TTx, TRx> RealNetwork<TTx, TRx>
         let tx_thread = std::thread::spawn(move || {
             let result = tx_loop(tx_stream, tx_q_in);
             
-            #[cfg(debug)]
+            // #[cfg(debug)]
             println!("tx thread loop exited: {:?}", result);
             
             tx_is_closed.store(true, Ordering::Relaxed);
@@ -99,7 +99,7 @@ impl<TTx, TRx> RealNetwork<TTx, TRx>
         let rx_thread = std::thread::spawn(move || {
             let result = rx_loop(rx_stream, rx_q_out);
 
-            #[cfg(debug)]
+            // #[cfg(debug)]
             println!("rx thread loop exited: {:?}", result);
 
             rx_is_closed.store(true, Ordering::Relaxed);

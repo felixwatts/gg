@@ -121,6 +121,8 @@ impl<TServer, TNetwork> ServerSystem<TServer, TNetwork> where TServer: Server<TN
 
             let is_keyframe = state.borrow_mut::<Body>(network_entity).unwrap().get_is_keyframe_and_reset();
             if !is_keyframe { continue; }   
+
+            println!("entity #{} keyframe", network_entity.get_id_number());
             
             if let Ok(body) = state.get::<Body>(network_entity) {
                 let msg = ServerMsg::SetBody(network_entity.get_id_number(), body);

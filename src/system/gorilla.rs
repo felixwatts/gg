@@ -22,7 +22,7 @@ pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>, color: Color, key_m
     let gorilla = ecs.create_entity();
     ecs.set(gorilla, Sprite::new(color, [0.3, 0.3].into()))?;  
     ecs.set(gorilla, Gorilla::new(loc.clone()))?;
-    ecs.set(gorilla, Body::new(loc, Vector2::zeros(), Vector2::new(0.0, -10.0)))?;
+    ecs.set(gorilla, Body::new_dynamic(loc, Vector2::zeros(), Vector2::new(0.0, -10.0)))?;
     ecs.set(gorilla, Network)?;
     if with_focus {
         ecs.set(gorilla, Focus)?;
@@ -38,7 +38,7 @@ pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>, color: Color, key_m
 pub fn spawn_anchor(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GgResult<EntityId> {
     let anchor = ecs.create_entity();
     ecs.set(anchor, Anchor)?;
-    ecs.set(anchor, Body::new(loc, Vector2::zeros(), Vector2::zeros()))?;
+    ecs.set(anchor, Body::new_static(loc))?;
     ecs.set(anchor, Sprite::new(WHITE, [0.1, 0.1].into()))?;
     ecs.set(anchor, Network)?;
 
@@ -68,7 +68,7 @@ impl<TContext> System<TContext> for GorillaSystem {
 
             if state.borrow::<Body>(entity).unwrap().get_loc().y < -20.0 {
                 let spawn_location = state.borrow::<Gorilla>(entity).unwrap().spawn_location.clone();
-                state.set(entity, Body::new(spawn_location.into(), Vector2::zeros(), Vector2::new(0.0, -10.0))).unwrap();
+                state.set(entity, Body::new_dynamic(spawn_location.into(), Vector2::zeros(), Vector2::new(0.0, -10.0))).unwrap();
             }
 
             let gorilla = state.borrow_mut::<Gorilla>(entity).unwrap();
