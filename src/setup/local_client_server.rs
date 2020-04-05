@@ -15,7 +15,7 @@ pub struct LocalClientServerSetup{
 }
 
 impl LocalClientServerSetup {
-    pub fn new(context: &mut ggez::Context, latency: u32) -> GgResult<LocalClientServerSetup>{
+    pub fn new(context: &mut ggez::Context, latency: u32, is_latency_compensation_enabled: bool) -> GgResult<LocalClientServerSetup>{
 
         let mut result = LocalClientServerSetup{
             client_engine: None,
@@ -29,7 +29,7 @@ impl LocalClientServerSetup {
         let server_systems: Vec<Box<dyn System<ggez::Context>>> = vec![
             Box::new(crate::system::server::ServerSystem::new(server)?),
             Box::new(crate::system::physics::PhysicsSystem{}),
-            Box::new(crate::system::gorilla::GorillaSystem{}),
+            Box::new(crate::system::gorilla::GorillaSystem{is_latency_compensation_enabled})
         ];
         let server_engine = Engine::new(server_systems, None, context)?;
 

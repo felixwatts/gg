@@ -4,7 +4,6 @@ use crate::network::RxChannel;
 use crate::network::ServerMsg;
 use crate::network::TxChannel;
 
-pub struct Client<TNetwork>where TNetwork: TxChannel<ServerMsg> + RxChannel<ClientMsg> {
-    pub network: TNetwork,
-    pub latency: Duration
-}
+pub struct Latency(pub Duration);
+
+pub struct Client<TNetwork>(pub TNetwork) where TNetwork: TxChannel<ServerMsg> + RxChannel<ClientMsg>;

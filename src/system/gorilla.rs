@@ -1,3 +1,4 @@
+use crate::component::client::Latency;
 use crate::input::KeyMapping;
 use crate::colors::Color;
 use crate::component::Keyboard;
@@ -14,8 +15,10 @@ use recs::EntityId;
 use crate::input::Button;
 use crate::component::sprite::Sprite;
 use crate::colors::WHITE;
+use std::time::Duration;
 
 pub struct GorillaSystem {
+    pub is_latency_compensation_enabled: bool
 }
 
 pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>, color: Color, key_mapping: Option<KeyMapping>, with_focus: bool) -> GgResult<EntityId> {
@@ -24,6 +27,8 @@ pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>, color: Color, key_m
     ecs.set(gorilla, Gorilla::new(loc.clone()))?;
     ecs.set(gorilla, Body::new_dynamic(loc, Vector2::zeros(), Vector2::new(0.0, -10.0)))?;
     ecs.set(gorilla, Network)?;
+    ecs.set(gorilla, Latency(Duration::from_millis(0u64)))?;
+
     if with_focus {
         ecs.set(gorilla, Focus)?;
     }
@@ -65,39 +70,73 @@ impl<TContext> System<TContext> for GorillaSystem {
         let filter = component_filter!(Gorilla, Body);
         state.collect_with(&filter, &mut ids);
         for &entity in ids.iter() {
-
-            if state.borrow::<Body>(entity).unwrap().get_loc().y < -20.0 {
-                let spawn_location = state.borrow::<Gorilla>(entity).unwrap().spawn_location.clone();
-                state.set(entity, Body::new_dynamic(spawn_location.into(), Vector2::zeros(), Vector2::new(0.0, -10.0))).unwrap();
-            }
-
-            let gorilla = state.borrow_mut::<Gorilla>(entity).unwrap();
-            let mut events = vec![];
-            events.extend(gorilla.input_events.drain(..));
-            for input_event in events {
-                match input_event.button {
-                    Button::One =>
-                        match input_event.is_down {
-                            true => self.try_add_rope(state, entity),
-                            false => self.try_remove_rope(state, entity)
-                        }
-                    ,
-                    Button::Two => {
-                        let body = state.borrow_mut::<Body>(entity)?;
-                        match input_event.is_down {
-                            true => body.set_acc(Vector2::new(0.0, -20.0)),
-                            false => body.set_acc(Vector2::new(0.0, -10.0))
-                        }
-                    }
-                    
-                };
-            }
+            self.respawn_if_outside_bounds(entity, state)?;
+            self.process_user_input(entity, state)?;
         }
         Ok(())
     }
 }
 
 impl GorillaSystem {
+
+    fn respawn_if_outside_bounds(&mut self, entity: EntityId, state: &mut Ecs) -> GgResult {
+        if state.borrow::<Body>(entity).unwrap().get_loc().y < -20.0 {
+            let spawn_location = state.borrow::<Gorilla>(entity).unwrap().spawn_location.clone();
+            state.set(entity, Body::new_dynamic(spawn_location.into(), Vector2::zeros(), Vector2::new(0.0, -10.0))).unwrap();
+        }
+
+        Ok(())
+    }
+
+    fn process_user_input(&mut self, entity: EntityId, state: &mut Ecs) -> GgResult {
+        let gorilla = state.borrow_mut::<Gorilla>(entity).unwrap();
+        let mut events = vec![];
+        events.extend(gorilla.input_events.drain(..));
+
+        if events.len() == 0 {
+            return Ok(())
+        }
+
+        self.apply_latency_compensation(entity, state, false)?;
+
+        for input_event in events {
+            match input_event.button {
+                Button::One =>
+                    match input_event.is_down {
+                        true => self.try_add_rope(state, entity),
+                        false => self.try_remove_rope(state, entity)
+                    }
+                ,
+                Button::Two => {
+                    let body = state.borrow_mut::<Body>(entity)?;
+                    match input_event.is_down {
+                        true => body.set_acc(Vector2::new(0.0, -20.0)),
+                        false => body.set_acc(Vector2::new(0.0, -10.0))
+                    }
+                }
+                
+            };
+        }
+
+        self.apply_latency_compensation(entity, state, true)?;
+
+        Ok(())
+    }
+
+    fn apply_latency_compensation(&mut self, entity: EntityId, state: &mut Ecs, is_forward: bool) -> GgResult {
+        if !self.is_latency_compensation_enabled {
+            return Ok(());
+        }
+
+        let mut latency = state.borrow::<Latency>(entity).unwrap().0.as_secs_f32() / 2.0;
+        if !is_forward {
+            latency = -latency;
+        }
+        let body = state.borrow_mut::<Body>(entity).unwrap();
+        body.step(latency);
+
+        Ok(())
+    }
 
     fn try_add_rope(
         &mut self, 

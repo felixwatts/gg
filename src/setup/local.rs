@@ -24,7 +24,7 @@ impl LocalSetup{
 
         let systems: Vec::<Box::<dyn System<ggez::Context>>> = vec![
             Box::new(crate::system::keyboard::KeyboardSystem{}),
-            Box::new(crate::system::gorilla::GorillaSystem{}),
+            Box::new(crate::system::gorilla::GorillaSystem{is_latency_compensation_enabled: false}),
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::render::RenderSystem::new(context)?),
         ];

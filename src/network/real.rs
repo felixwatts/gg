@@ -90,7 +90,7 @@ impl<TTx, TRx> RealNetwork<TTx, TRx>
             let result = tx_loop(tx_stream, tx_q_in);
             
             // #[cfg(debug)]
-            println!("tx thread loop exited: {:?}", result);
+            println!("tx loop exited: {:?}", result);
             
             tx_is_closed.store(true, Ordering::Relaxed);
             result
@@ -100,7 +100,7 @@ impl<TTx, TRx> RealNetwork<TTx, TRx>
             let result = rx_loop(rx_stream, rx_q_out);
 
             // #[cfg(debug)]
-            println!("rx thread loop exited: {:?}", result);
+            println!("rx loop exited: {:?}", result);
 
             rx_is_closed.store(true, Ordering::Relaxed);
             result
