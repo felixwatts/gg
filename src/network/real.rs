@@ -74,6 +74,8 @@ impl<TTx, TRx> RealNetwork<TTx, TRx>
 
     pub fn new(tcp_stream: TcpStream) -> GgResult<RealNetwork<TTx, TRx>> {
 
+        tcp_stream.set_nodelay(true)?;
+
         let (tx_q_out, tx_q_in) = channel::<TTx>();
         let (rx_q_out, rx_q_in) = channel::<TRx>();
 
