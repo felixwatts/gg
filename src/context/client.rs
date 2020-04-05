@@ -11,6 +11,10 @@ impl TimerService for ggez::Context {
     fn average_delta(&self) -> Duration{
         ggez::timer::average_delta(self)
     }
+
+    fn time_since_start(&self) -> Duration {
+        ggez::timer::time_since_start(self)
+    }
 }
 
 impl GfxService for ggez::Context {

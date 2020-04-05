@@ -10,6 +10,7 @@ use std::time::Duration;
 
 pub trait TimerService {
     fn average_delta(&self) -> Duration;
+    fn time_since_start(&self) -> Duration;
 }
 
 pub trait GfxService {

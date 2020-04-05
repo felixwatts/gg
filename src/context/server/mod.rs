@@ -24,4 +24,8 @@ impl TimerService for ServerContext {
     fn average_delta(&self) -> Duration{
         self.timer.average_delta()
     }
+
+    fn time_since_start(&self) -> Duration {
+        self.timer.time_since_start()
+    }
 }
