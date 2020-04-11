@@ -27,11 +27,12 @@ pub struct ServerSystem<TServer, TNetwork> where TServer: Server<TNetwork>, TNet
     entity_buffer_2: Vec::<EntityId>,
     msg_buffer: Vec::<ClientMsg>,
     colors: Colors,
-    next_latency_measurement_time: Duration
+    next_latency_measurement_time: Option<Duration>
 }
 
 impl<TServer, TNetwork> ServerSystem<TServer, TNetwork> where TServer: Server<TNetwork>, TNetwork: 'static + TxChannel<ServerMsg> + RxChannel<ClientMsg> {
-    pub fn new(server: TServer) -> GgResult<ServerSystem<TServer, TNetwork>> {
+    
+    pub fn new(server: TServer, is_latency_compensation_enabled: bool) -> GgResult<ServerSystem<TServer, TNetwork>> {
         Ok(ServerSystem{
             server,
             new_client_buffer: vec![],
@@ -39,7 +40,7 @@ impl<TServer, TNetwork> ServerSystem<TServer, TNetwork> where TServer: Server<TN
             entity_buffer_2: vec![],
             msg_buffer: vec![],
             colors: Colors::new(),
-            next_latency_measurement_time: Duration::from_millis(0u64)
+            next_latency_measurement_time: if is_latency_compensation_enabled { Some(Duration::from_millis(0u64)) } else { None }
         })
     }
 
@@ -94,13 +95,15 @@ impl<TServer, TNetwork> ServerSystem<TServer, TNetwork> where TServer: Server<TN
             for msg in self.msg_buffer.drain(..) {
                 match msg {
                     ClientMsg::Input(input_event) => {
+                        println!("rx user input at {:#?}", context.time_since_start());
                         let gorilla_component = state.borrow_mut::<Gorilla>(client_entity).unwrap();
                         gorilla_component.input_events.push(input_event);
                     },
                     ClientMsg::Pong(tx_time) => {
+                        println!("rx pong at: {:#?}", context.time_since_start());
                         let latency = context.time_since_start() - tx_time;
                         let latency_component = state.borrow_mut::<Latency>(client_entity).unwrap();
-                        latency_component.0 = latency;
+                        latency_component.0 = latency.as_secs_f32();
                         println!("Client #{} ping: {:#?}", client_entity.get_id_number(), latency_component.0);
                     }
                     #[cfg(test)]
@@ -142,19 +145,23 @@ impl<TServer, TNetwork> ServerSystem<TServer, TNetwork> where TServer: Server<TN
     }
 
     fn measure_client_latencies<TContext>(&mut self, context: &TContext, state: &mut Ecs) -> GgResult where TContext: TimerService {
-        let time = context.time_since_start();
-        if time < self.next_latency_measurement_time {
-            return Ok(())
-        }
-        self.next_latency_measurement_time = time + Duration::from_secs(1u64);
 
-        let ping_msg = Ping(time);    
-
-        self.entity_buffer_2.clear();
-        state.collect_with(&component_filter!(Client<TNetwork>), &mut self.entity_buffer_2); 
-        for &network_entity in self.entity_buffer_2.iter() {
-            let network_component: &mut Client<TNetwork> = state.borrow_mut(network_entity)?;
-            network_component.0.enqueue(ping_msg.clone())?;
+        if let Some(next_latency_measurement_time) = self.next_latency_measurement_time {
+            let time = context.time_since_start();
+            if time < next_latency_measurement_time {
+                return Ok(())
+            }
+            self.next_latency_measurement_time = Some(time + Duration::from_secs(1u64));
+    
+            let ping_msg = Ping(time);    
+    
+            self.entity_buffer_2.clear();
+            state.collect_with(&component_filter!(Client<TNetwork>), &mut self.entity_buffer_2); 
+            for &network_entity in self.entity_buffer_2.iter() {
+                let network_component: &mut Client<TNetwork> = state.borrow_mut(network_entity)?;
+                println!("tx ping at: {:#?}", context.time_since_start());
+                network_component.0.enqueue(ping_msg.clone())?;
+            }
         }
 
         Ok(())

@@ -1,6 +1,11 @@
+mod r#static;
+mod radial;
+mod planar;
+
 use nalgebra::Vector2;
-use crate::component::radial_body::RadialBody;
-use crate::component::planar_body::PlanarBody;
+use crate::component::body::radial::RadialBody;
+use crate::component::body::planar::PlanarBody;
+use crate::component::body::r#static::StaticBody;
 use serde::{Serialize, Deserialize};
 
 pub const KEYFRAME_PERIOD: f32 = 0.25f32;
@@ -16,31 +21,13 @@ pub enum Body {
     Radial(RadialBody)
 }
 
-#[derive(Clone)]
-#[derive(Deserialize)]
-#[derive(Serialize)]
-#[derive(PartialEq)]
-#[derive(Debug)]
-pub struct StaticBody{
-    loc: Vector2::<f32>,
-    keyframe: bool
-}
-
 impl Body {
     pub fn new_static(loc: Vector2::<f32>) -> Body {
-        Body::Static(StaticBody{
-            keyframe: true,
-            loc
-        })
+        Body::Static(StaticBody::new(loc))
     }
 
     pub fn new_dynamic(loc: Vector2::<f32>, vel: Vector2::<f32>, acc: Vector2::<f32>) -> Body {
-        Body::Planar(PlanarBody{
-            keyframe_countdown: 0.0,
-            loc,
-            vel,
-            acc
-        })
+        Body::Planar(PlanarBody::new(loc, vel, acc))
     }
 
     pub fn step(&mut self, duration: f32) {
@@ -69,7 +56,7 @@ impl Body {
 
     pub fn get_is_keyframe_and_reset(&mut self) -> bool {
         match self {
-            Body::Static(b) => { let result = b.keyframe; b.keyframe = false; result },
+            Body::Static(b) => b.get_is_keyframe_and_reset(),
             Body::Planar(b) => b.get_is_keyframe_and_reset(),
             Body::Radial(b) => b.get_is_keyframe_and_reset()
         }
@@ -78,8 +65,8 @@ impl Body {
     pub fn set_acc(&mut self, acc: Vector2::<f32>) {
         match self {
             Body::Static(_) => panic!("cannot modify a static body"),
-            Body::Planar(b) => { b.acc = acc; b.keyframe_countdown = 0.0; }
-            Body::Radial(b) => { b.acc = acc; b.keyframe_countdown = 0.0; }
+            Body::Planar(b) => b.set_acc(acc),
+            Body::Radial(b) => b.set_acc(acc)
         }
     }
 

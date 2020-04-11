@@ -27,7 +27,7 @@ impl LocalClientServerSetup {
         let client = server.connect();
 
         let server_systems: Vec<Box<dyn System<ggez::Context>>> = vec![
-            Box::new(crate::system::server::ServerSystem::new(server)?),
+            Box::new(crate::system::server::ServerSystem::new(server, is_latency_compensation_enabled)?),
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::gorilla::GorillaSystem{is_latency_compensation_enabled})
         ];

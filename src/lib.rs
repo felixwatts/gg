@@ -8,6 +8,9 @@ pub mod err;
 mod input;
 mod colors;
 
+#[cfg(test)]
+mod testing;
+
 extern crate nalgebra;
 extern crate ggez;
 #[macro_use]

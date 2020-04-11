@@ -1,6 +1,3 @@
-mod planar_body;
-mod radial_body;
-
 pub mod body;
 pub mod gorilla;
 pub mod sprite;

@@ -1,3 +1,4 @@
+use crate::context::TimerService;
 use crate::input::default_key_mapping;
 use crate::input::InputEvent;
 use recs::Ecs;
@@ -13,6 +14,8 @@ use crate::system::system::System;
 use crate::network::ClientMsg;
 use std::collections::HashMap;
 use crate::input::{KeyMapping};
+#[cfg(test)]
+use crate::network::Server;
 
 pub struct ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg>{
     server: TNetwork,
@@ -41,11 +44,11 @@ impl<TNetwork> ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxC
     }
 }
 
-impl<TNetwork, TContext> System<TContext> for ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg> {
+impl<TNetwork, TContext> System<TContext> for ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg>, TContext: TimerService {
     fn key_down(
         &mut self,
         _: &mut Ecs,
-        _: &mut TContext,
+        context: &mut TContext,
         keycode: KeyCode,
         _: KeyMods,
         repeat: bool) {
@@ -53,6 +56,7 @@ impl<TNetwork, TContext> System<TContext> for ClientSystem<TNetwork> where TNetw
 
             match self.key_mapping.get(&keycode) {
                 Some(&button) => {
+                    println!("tx user input at {:#?}", context.time_since_start());
                     self.server.enqueue(ClientMsg::Input(InputEvent{button, is_down: true})).unwrap();
                 },
                 None => {}
@@ -110,4 +114,32 @@ impl<TNetwork, TContext> System<TContext> for ClientSystem<TNetwork> where TNetw
 
         Ok(())
     }
+}
+
+#[test]
+fn test_ping_pong() {
+    let mut server_container = crate::network::sim::SimServerContainer::new();
+    let mut server = server_container.get_server(0u32);
+    let network = server.connect();
+    let mut subject = ClientSystem::new(network);
+    let mut state = Ecs::new();
+
+
+    let mut new_clients = vec![];
+    server.get_new_clients(&mut new_clients);
+    new_clients[0].enqueue(ServerMsg::Ping(std::time::Duration::from_millis(42u64))).unwrap();
+
+    let context = crate::testing::MockContext{    
+        average_delta: std::time::Duration::from_millis(0),
+        time_since_start: std::time::Duration::from_millis(0)
+    };
+
+    server_container.step();
+    subject.update(&mut state, &context).unwrap();
+
+    let mut client_msgs = vec![];
+    new_clients[0].dequeue(&mut client_msgs).unwrap();
+
+    assert_eq!(1, client_msgs.len());
+    assert_eq!(ClientMsg::Pong(std::time::Duration::from_millis(42u64)), client_msgs[0]);
 }

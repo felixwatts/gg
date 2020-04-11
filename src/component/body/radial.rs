@@ -1,5 +1,7 @@
+#[cfg(test)]
+use crate::testing::assert_roughly_eq;
 use crate::component::body::KEYFRAME_PERIOD;
-use crate::component::planar_body::PlanarBody;
+use crate::component::body::planar::PlanarBody;
 use nalgebra::Vector2;
 use serde::{Serialize, Deserialize};
 
@@ -9,18 +11,34 @@ use serde::{Serialize, Deserialize};
 #[derive(PartialEq)]
 #[derive(Debug)]
 pub struct RadialBody {
-    pub origin: Vector2<f32>,
-    pub radius: f32,
-    pub loc: f32,
-    pub vel: f32,
+    pub(super) origin: Vector2<f32>,
+    pub(super) radius: f32,
+    pub(super) loc: f32,
+    pub(super) vel: f32,
 
     // acceleration is expressed in planar coordinates
-    pub acc: Vector2<f32>,
+    pub(super) acc: Vector2<f32>,
 
-    pub keyframe_countdown: f32
+    keyframe_countdown: f32
 }
 
 impl RadialBody {
+
+    pub fn new(origin: Vector2<f32>, radius: f32, loc: f32, vel: f32, acc: Vector2<f32>) -> RadialBody {
+        RadialBody{
+            origin,
+            radius,
+            loc,
+            vel,
+            acc,
+            keyframe_countdown: 0.0
+        }
+    }
+
+    pub fn set_acc(&mut self, acc: Vector2::<f32>) {
+        self.acc = acc;
+        self.keyframe_countdown = 0.0;
+    }
 
     fn radius(&self) -> Vector2::<f32> {
         Vector2::new(
@@ -54,12 +72,12 @@ impl RadialBody {
     pub fn to_planar(&self) -> PlanarBody {
         let loc = self.origin + self.radius();
         let vel = self.tangent() * self.vel * self.radius;
-        PlanarBody{
-            keyframe_countdown: 0.0,
+
+        PlanarBody::new(
             loc,
             vel,
-            acc: self.acc
-        }
+            self.acc
+        )
     }
 
     pub fn get_is_keyframe_and_reset(&mut self) -> bool {
@@ -94,11 +112,6 @@ fn test_accel_along_tangent() {
 }
 
 #[cfg(test)]
-fn assert_roughly_eq(expected: f32, actual: f32) {
-    assert!((expected - actual).abs() < 0.0001, "{} != {}", expected, actual);
-}
-
-#[cfg(test)]
 fn expect_accel_along_tangent(loc: f32, radius: f32, ax: f32, ay: f32, expected: f32) {
     let subject = RadialBody {
         keyframe_countdown: 0.0,
@@ -111,7 +124,7 @@ fn expect_accel_along_tangent(loc: f32, radius: f32, ax: f32, ay: f32, expected:
 
     let actual = subject.acc_along_tangent();
 
-    assert_roughly_eq(expected, actual);
+    assert_roughly_eq("accel_along_tangent", expected, actual);
 }
 
 #[test]
@@ -142,8 +155,8 @@ fn expect_radius(loc: f32, radius: f32, x: f32, y: f32) {
 
     let actual = subject.radius();
 
-    assert_roughly_eq(x, actual.x);
-    assert_roughly_eq(y, actual.y);
+    assert_roughly_eq("x", x, actual.x);
+    assert_roughly_eq("y", y, actual.y);
 }
 
 #[test]
@@ -174,8 +187,8 @@ fn expect_tangent(loc: f32, radius: f32, x: f32, y: f32) {
 
     let actual = subject.tangent();
 
-    assert_roughly_eq(x, actual.x);
-    assert_roughly_eq(y, actual.y);
+    assert_roughly_eq("x", x, actual.x);
+    assert_roughly_eq("y", y, actual.y);
 }
 
 #[test]
@@ -218,8 +231,8 @@ fn expect_update(radius: f32, loc: f32, vel: f32, ax: f32, ay: f32, t: f32, exp_
     assert_eq!(Vector2::<f32>::zeros(), subject.origin);
     assert_eq!(Vector2::<f32>::new(ax, ay), subject.acc);
     assert_eq!(radius, subject.radius);
-    assert_roughly_eq(exp_loc, subject.loc);
-    assert_roughly_eq(exp_vel * (1.0 - (0.1 * t)), subject.vel);
+    assert_roughly_eq("loc", exp_loc, subject.loc);
+    assert_roughly_eq("vel", exp_vel * (1.0 - (0.1 * t)), subject.vel);
 }
 
 #[test]
@@ -264,8 +277,46 @@ fn expect_to_planar(ox: f32, oy: f32, radius: f32, loc: f32, vel: f32, ax: f32, 
     let actual = subject.to_planar();
 
     assert_eq!(Vector2::new(ax, ay), actual.acc);
-    assert_roughly_eq(exp_loc_x, actual.loc.x);
-    assert_roughly_eq(exp_loc_y, actual.loc.y);
-    assert_roughly_eq(exp_vel_x, actual.vel.x);
-    assert_roughly_eq(exp_vel_y, actual.vel.y);
+    assert_roughly_eq("loc.x", exp_loc_x, actual.loc.x);
+    assert_roughly_eq("loc.y", exp_loc_y, actual.loc.y);
+    assert_roughly_eq("vel.x", exp_vel_x, actual.vel.x);
+    assert_roughly_eq("vel.y", exp_vel_y, actual.vel.y);
+}
+
+#[test]
+fn test_keyframe() {
+    expect_keyframe(0.0, 0.0, true);
+    expect_keyframe(1.0, 0.0, false);
+    expect_keyframe(0.0, 1.0, true);
+    expect_keyframe(1.0, 1.0, true);
+
+    let planar = PlanarBody::new(
+        Vector2::<f32>::zeros(),
+        Vector2::<f32>::zeros(),
+        Vector2::<f32>::zeros()
+    );
+
+    let mut subject = planar.to_radial(Vector2::<f32>::zeros());
+
+    assert_eq!(0.0, subject.keyframe_countdown);
+    assert_eq!(true, subject.get_is_keyframe_and_reset());
+    assert_eq!(false, subject.get_is_keyframe_and_reset());
+    assert_eq!(KEYFRAME_PERIOD, subject.keyframe_countdown); 
+}
+
+#[cfg(test)]
+fn expect_keyframe(keyframe_countdown: f32, step_size: f32, expect: bool) {
+    let mut subject = RadialBody{
+        keyframe_countdown,
+        origin: Vector2::<f32>::zeros(),
+        radius: 1.0,
+        loc: 0.0,
+        vel: 0.0,
+        acc: Vector2::<f32>::zeros()
+    };
+
+    subject.update(step_size);
+
+    assert_eq!(expect, subject.get_is_keyframe_and_reset());
+    assert_eq!(false, subject.get_is_keyframe_and_reset());
 }

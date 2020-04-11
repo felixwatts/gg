@@ -8,6 +8,7 @@ use ggez::graphics::spritebatch::SpriteBatch;
 use ggez::graphics::DrawParam;
 use std::time::Duration;
 
+
 pub trait TimerService {
     fn average_delta(&self) -> Duration;
     fn time_since_start(&self) -> Duration;
