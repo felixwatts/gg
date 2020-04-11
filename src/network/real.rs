@@ -19,13 +19,10 @@ use std::io::Read;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
 pub struct RealNetwork<TTx, TRx>{
-    // tcp_stream: TcpStream,
     is_closed: Arc<AtomicBool>,
     tx_q_out: Option<Sender<TTx>>,
     rx_q_in: Option<Receiver<TRx>>,
-    // tx_thread: JoinHandle<GgResult>,
-    // rx_thread: JoinHandle<GgResult>,
-    
+
     phantom1: PhantomData<TTx>,
     phantom2: PhantomData<TRx>,
 }

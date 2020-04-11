@@ -51,11 +51,7 @@ impl LocalClientServerSetup {
 
 impl EventHandler for LocalClientServerSetup {
     fn update(&mut self, context: &mut Context) -> GameResult {
-
         self.network_time.set(ggez::timer::time_since_start(context));
-
-        // self.network.step();
-
         self.client_engine.as_mut().unwrap().update(context)?;
         self.server_engine.as_mut().unwrap().update(context)?; 
 

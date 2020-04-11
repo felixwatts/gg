@@ -1,8 +1,6 @@
 use std::collections::VecDeque;
 use std::time::Duration;
 use std::cell::{Cell, RefCell};
-// use std::sync::mpsc::Receiver;
-// use std::sync::mpsc::Sender;
 use crate::network::Server;
 use crate::network::ServerMsg;
 use crate::network::ClientMsg;
@@ -15,23 +13,14 @@ type SimMsg<T> = (T, Duration);
 
 struct SimTxChannel<TMsg> {
     time: Rc<Cell<Duration>>,
-    // last_tx_step: Option<u32>,
     latency: Duration,
-    // sender: Sender<SimMsg<TMsg>>
     pipe: Rc<RefCell<VecDeque<SimMsg<TMsg>>>>
 }
 
 impl<TMsg> TxChannel<TMsg> for SimTxChannel<TMsg> {
     fn enqueue(&mut self, msg: TMsg) -> GgResult {
         let arrival_time = self.time.get() + self.latency;
-        // let delay_write = match self.last_tx_step {
-        //     Some(step) => std::cmp::min(self.current_step.get() - step, self.latency),
-        //     None => self.latency
-        // };
-        // self.last_tx_step = Some(self.current_step.get());
-        // self.sender.send(SimMsg::<TMsg>::Delay(delay_write))?;
         self.pipe.borrow_mut().push_back((msg, arrival_time));
-        // self.sender.send(SimMsg::<TMsg>::Msg(msg, arrival_time))?;
         Ok(())
     }
 }
@@ -184,10 +173,6 @@ fn _test_sim_server(latency: u64, client_actions: Vec::<Vec::<u32>>, server_acti
     let client_msgs = client_actions.iter().map(|step| step.iter().map(|&msg| ClientMsg::Test(msg)).collect::<Vec::<_>>()).collect::<Vec::<_>>();
     let server_msgs = server_actions.iter().map(|step| step.iter().map(|&msg| ServerMsg::Test(msg)).collect::<Vec::<_>>()).collect::<Vec::<_>>();
 
-    // let mut subject = SimServerContainer::new();
-    // let mut server = subject.get_server(latency);
-
-    // let timer: Rc::<dyn TimerService> = Rc::new(crate::testing::MockContext::new(20));
     let time = Rc::new(Cell::new(Duration::from_millis(0u64)));
     let mut server = SimServer::new(Duration::from_millis(latency), Rc::clone(&time));
 
@@ -235,7 +220,5 @@ fn _test_sim_server(latency: u64, client_actions: Vec::<Vec::<u32>>, server_acti
         }
 
         time.set(time.get() + Duration::from_millis(1));
-
-        // subject.step();
     }
 }
