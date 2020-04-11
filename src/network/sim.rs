@@ -1,6 +1,8 @@
-use std::cell::Cell;
-use std::sync::mpsc::Receiver;
-use std::sync::mpsc::Sender;
+use std::collections::VecDeque;
+use std::time::Duration;
+use std::cell::{Cell, RefCell};
+// use std::sync::mpsc::Receiver;
+// use std::sync::mpsc::Sender;
 use crate::network::Server;
 use crate::network::ServerMsg;
 use crate::network::ClientMsg;
@@ -9,60 +11,78 @@ use crate::network::TxChannel;
 use crate::err::GgResult;
 use std::rc::Rc;
 
-enum SimMsg<T> {
-    Msg(T),
-    Delay(u32)
-}
+type SimMsg<T> = (T, Duration);
 
 struct SimTxChannel<TMsg> {
-    current_step: Rc<Cell<u32>>,
-    last_tx_step: Option<u32>,
-    latency: u32,
-    sender: Sender<SimMsg<TMsg>>
+    time: Rc<Cell<Duration>>,
+    // last_tx_step: Option<u32>,
+    latency: Duration,
+    // sender: Sender<SimMsg<TMsg>>
+    pipe: Rc<RefCell<VecDeque<SimMsg<TMsg>>>>
 }
 
 impl<TMsg> TxChannel<TMsg> for SimTxChannel<TMsg> {
     fn enqueue(&mut self, msg: TMsg) -> GgResult {
-        let delay_write = match self.last_tx_step {
-            Some(step) => std::cmp::min(self.current_step.get() - step, self.latency),
-            None => self.latency
-        };
-        self.last_tx_step = Some(self.current_step.get());
-        self.sender.send(SimMsg::<TMsg>::Delay(delay_write))?;
-        self.sender.send(SimMsg::<TMsg>::Msg(msg))?;
+        let arrival_time = self.time.get() + self.latency;
+        // let delay_write = match self.last_tx_step {
+        //     Some(step) => std::cmp::min(self.current_step.get() - step, self.latency),
+        //     None => self.latency
+        // };
+        // self.last_tx_step = Some(self.current_step.get());
+        // self.sender.send(SimMsg::<TMsg>::Delay(delay_write))?;
+        self.pipe.borrow_mut().push_back((msg, arrival_time));
+        // self.sender.send(SimMsg::<TMsg>::Msg(msg, arrival_time))?;
         Ok(())
     }
 }
 
 struct SimRxChannel<TMsg> {
-    current_step: Rc<Cell<u32>>,
-    next_read_step: u32,
-    receiver: Receiver<SimMsg<TMsg>>
+    time: Rc<Cell<Duration>>,
+    // next_read_step: u32,
+    pipe: Rc<RefCell<VecDeque<SimMsg<TMsg>>>>
 }
 
 impl<TMsg> RxChannel<TMsg> for SimRxChannel<TMsg> {
     fn dequeue(&mut self, buffer: &mut Vec::<TMsg>) -> GgResult {
         buffer.clear();
+
+        let current_time = self.time.get();
+        
         loop {
-            if self.next_read_step > self.current_step.get() { 
-                break; 
+
+            let mut pipe = self.pipe.borrow_mut();
+            let front = pipe.get(0);
+
+            match front {
+                Some(msg) => {
+                    if msg.1 > current_time {
+                        return Ok(())
+                    }
+
+                    buffer.push(pipe.pop_front().unwrap().0);
+                },
+                None => return Ok(())
             }
-            match self.receiver.try_recv() {
-                Ok(front) => {
-                    match front {
-                        SimMsg::<TMsg>::Delay(delay) => {
-                                self.next_read_step = self.current_step.get() + delay;
-                            },
-                        SimMsg::<TMsg>::Msg(msg) => {
-                                buffer.push(msg);
-                                // loop
-                            }
-                        }
-                    },
-                Err(_) => break
-            }
+
+            // if self.next_read_step > self.current_step.get() { 
+            //     break; 
+            // }
+            // match self.receiver.try_recv() {
+            //     Ok(front) => {
+            //         match front {
+            //             SimMsg::<TMsg>::Delay(delay) => {
+            //                     self.next_read_step = self.current_step.get() + delay;
+            //                 },
+            //             SimMsg::<TMsg>::Msg(msg) => {
+            //                     buffer.push(msg);
+            //                     // loop
+            //                 }
+            //             }
+            //         },
+            //     Err(_) => break
+            // }
         }
-        Ok(())
+        // Ok(())
     }
 }
 
@@ -83,36 +103,32 @@ impl<TTx, TRx> RxChannel<TRx> for SimNetworkEnd<TTx, TRx> {
     }
 }
 
-pub struct SimServerContainer{
-    current_step: Rc<Cell<u32>>,
-}
+// pub struct SimServerContainer{
+//     timer: Rc<dyn TimerService>,
+// }
 
-impl<'a> SimServerContainer{
-    pub fn new() -> SimServerContainer{
-        SimServerContainer{
-            current_step: Rc::new(Cell::new(0u32))
-        }
-    }
+// impl SimServerContainer{
+//     pub fn new() -> SimServerContainer{
+//         SimServerContainer{
+//             timer: Rc::new(crate::testing::MockContext::new(20))
+//         }
+//     }
 
-    pub fn get_server(&self, latency: u32) -> SimServer{
-        SimServer::new(latency, Rc::clone(&self.current_step))
-    }
-
-    pub fn step(&mut self) {
-        self.current_step.set(self.current_step.get() + 1);
-    }
-}
+//     pub fn get_server(&self, latency: Duration) -> SimServer{
+//         SimServer::new(latency, Rc::clone(&self.timer))
+//     }
+// }
 
 pub struct SimServer {
-    current_step: Rc<Cell<u32>>,
-    latency: u32,
+    time: Rc<Cell<Duration>>,
+    latency: Duration,
     new_clients: Vec::<SimNetworkEnd<ServerMsg, ClientMsg>>
 }
 
 impl SimServer {
-    pub fn new(latency: u32, current_step: Rc<Cell<u32>>) -> SimServer {
+    pub fn new(latency: Duration, time: Rc<Cell<Duration>>) -> SimServer {
         SimServer{
-            current_step,
+            time,
             latency,
             new_clients: vec![]
         }
@@ -120,20 +136,23 @@ impl SimServer {
 
     pub fn connect(&mut self) -> SimNetworkEnd<ClientMsg, ServerMsg> {
 
-        let (client_sender, server_receiver) = std::sync::mpsc::channel();
-        let (server_sender, client_receiver) = std::sync::mpsc::channel();
+        let pipe_up = Rc::new(RefCell::from(VecDeque::<SimMsg::<ClientMsg>>::new()));
+        let pipe_down = Rc::new(RefCell::from(VecDeque::<SimMsg::<ServerMsg>>::new()));
+
+        // let (client_sender, server_receiver) = std::sync::mpsc::channel();
+        // let (server_sender, client_receiver) = std::sync::mpsc::channel();
 
         let client_tx_channel = SimTxChannel{
-            current_step: Rc::clone(&self.current_step),
-            last_tx_step: None,
+            time: Rc::clone(&self.time),
+            // last_tx_step: None,
             latency: self.latency,
-            sender: client_sender
+            pipe: Rc::clone(&pipe_up)
         };
 
         let client_rx_channel = SimRxChannel{
-            current_step: Rc::clone(&self.current_step),
-            next_read_step: 0,
-            receiver: client_receiver
+            time: Rc::clone(&self.time),
+            // next_read_step: 0,
+            pipe: Rc::clone(&pipe_down)
         };
 
         let client_end = SimNetworkEnd{
@@ -142,16 +161,16 @@ impl SimServer {
         };
 
         let server_tx_channel = SimTxChannel{
-            current_step: Rc::clone(&self.current_step),
-            last_tx_step: None,
+            time: Rc::clone(&self.time),
+            // last_tx_step: None,
             latency: self.latency,
-            sender: server_sender
+            pipe: Rc::clone(&pipe_down)
         };
 
         let server_rx_channel = SimRxChannel{
-            current_step: Rc::clone(&self.current_step),
-            next_read_step: 0,
-            receiver: server_receiver
+            time: Rc::clone(&self.time),
+            // next_read_step: 0,
+            pipe: Rc::clone(&pipe_up)
         };
 
         let server_end = SimNetworkEnd{
@@ -162,6 +181,10 @@ impl SimServer {
         self.new_clients.push(server_end);
 
         client_end
+    }
+
+    pub fn step(&mut self, dt: Duration) {
+        self.time.set(self.time.get() + dt);
     }
 }
 
@@ -203,13 +226,18 @@ fn test_sim_server() {
 }
 
 #[cfg(test)]
-fn _test_sim_server(latency: u32, client_actions: Vec::<Vec::<u32>>, server_actions: Vec::<Vec::<u32>>) {
+fn _test_sim_server(latency: u64, client_actions: Vec::<Vec::<u32>>, server_actions: Vec::<Vec::<u32>>) {
 
     let client_msgs = client_actions.iter().map(|step| step.iter().map(|&msg| ClientMsg::Test(msg)).collect::<Vec::<_>>()).collect::<Vec::<_>>();
     let server_msgs = server_actions.iter().map(|step| step.iter().map(|&msg| ServerMsg::Test(msg)).collect::<Vec::<_>>()).collect::<Vec::<_>>();
 
-    let mut subject = SimServerContainer::new();
-    let mut server = subject.get_server(latency);
+    // let mut subject = SimServerContainer::new();
+    // let mut server = subject.get_server(latency);
+
+    // let timer: Rc::<dyn TimerService> = Rc::new(crate::testing::MockContext::new(20));
+    let time = Rc::new(Cell::new(Duration::from_millis(0u64)));
+    let mut server = SimServer::new(Duration::from_millis(latency), Rc::clone(&time));
+
     let mut client_end = server.connect();
     let mut new_clients = vec![];
     server.get_new_clients(&mut new_clients);
@@ -253,6 +281,8 @@ fn _test_sim_server(latency: u32, client_actions: Vec::<Vec::<u32>>, server_acti
             }
         }
 
-        subject.step();
+        time.set(time.get() + Duration::from_millis(1));
+
+        // subject.step();
     }
 }

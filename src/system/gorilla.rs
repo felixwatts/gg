@@ -1,4 +1,3 @@
-use crate::input::InputEvent;
 use crate::component::client::Latency;
 use crate::input::KeyMapping;
 use crate::colors::Color;
@@ -204,8 +203,8 @@ fn test_latency_compensation() {
     // one with non-zero latency and latency comp
 
     let mut setups = vec![
-        crate::testing::MockSetup::new(0u32, false),
-        crate::testing::MockSetup::new(5u32, false)
+        crate::testing::MockSetup::new(Duration::from_millis(0), Duration::from_millis(16), false),
+        crate::testing::MockSetup::new(Duration::from_millis(50), Duration::from_millis(16), true)
     ];
 
     // allow time for server to measure latency

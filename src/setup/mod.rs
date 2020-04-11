@@ -8,6 +8,7 @@ use crate::setup::server::ServerSetup;
 use crate::setup::local::LocalSetup;
 use crate::setup::local_client_server::LocalClientServerSetup;
 use crate::err::GgResult;
+use std::time::Duration;
 use std::env;
 use std::path;
 use ggez::event;
@@ -51,7 +52,7 @@ pub fn new_local() -> GgResult<Setup<LocalSetup>> {
     })
 }
 
-pub fn new_local_client_server(latency: u32, is_latency_compensation_enabled: bool) -> GgResult<Setup<LocalClientServerSetup>> {
+pub fn new_local_client_server(latency: Duration, is_latency_compensation_enabled: bool) -> GgResult<Setup<LocalClientServerSetup>> {
     let (mut context, event_loop) = build_context()?;
 
     let setup = LocalClientServerSetup::new(&mut context, latency, is_latency_compensation_enabled)?;
