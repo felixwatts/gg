@@ -18,8 +18,8 @@ impl TimerService for ggez::Context {
 }
 
 impl GfxService for ggez::Context {
-    fn new_img(&mut self, filename: &'static str) -> GgResult<ggez::graphics::Image> {
-        let img = ggez::graphics::Image::new(self, filename)?;
+    fn new_img(&mut self, _filename: &'static str) -> GgResult<ggez::graphics::Image> {
+        let img = ggez::graphics::Image::solid(self, 1u16, ggez::graphics::Color{r: 1.0, g: 1.0, b: 1.0, a: 1.0 })?;
         Ok(img)
     }
 

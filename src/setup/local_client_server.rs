@@ -25,7 +25,7 @@ impl LocalClientServerSetup {
             network_time: Rc::new(Cell::new(Duration::from_millis(0)))
         };
 
-        let mut server = crate::network::sim::SimServer::new(network_latency, Rc::clone(&result.network_time));// result.network.get_server(latency);
+        let mut server = crate::network::sim::SimServer::new(network_latency, Rc::clone(&result.network_time));
         let client = server.connect();
 
         let server_systems: Vec<Box<dyn System<ggez::Context>>> = vec![
