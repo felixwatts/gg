@@ -23,10 +23,6 @@ use ggez::input::keyboard::KeyCode;
 #[cfg(test)]
 use ggez::event::KeyMods;
 #[cfg(test)]
-use crate::testing::MockContext;
-#[cfg(test)]
-use crate::engine::Engine;
-#[cfg(test)]
 use crate::testing::assert_roughly_eq;
 
 pub struct GorillaSystem {
@@ -145,6 +141,7 @@ impl GorillaSystem {
             latency = -latency;
         }
 
+        #[cfg(debug)]
         println!("apply latency comp of {}s", latency);
 
         let body = state.borrow_mut::<Body>(entity).unwrap();
@@ -198,17 +195,14 @@ impl GorillaSystem {
 
 #[test]
 fn test_latency_compensation() {
-
     // create two setups, one with zero latency and no latency comp and
     // one with non-zero latency and latency comp
-
     let mut setups = vec![
         crate::testing::MockSetup::new(Duration::from_millis(0), Duration::from_millis(16), false),
         crate::testing::MockSetup::new(Duration::from_millis(50), Duration::from_millis(16), true)
     ];
 
     // allow time for server to measure latency
-
     for setup in setups.iter_mut() {
         for _ in 0..10 {
             setup.step();
@@ -216,7 +210,6 @@ fn test_latency_compensation() {
     }
 
     // in each setup a client issues the same user input at the same time
-
     for setup in setups.iter_mut() {
         setup.client1_engine.key_down_event(
             &mut setup.context,
@@ -227,7 +220,6 @@ fn test_latency_compensation() {
     }
 
     // after both servers have received the user input
-
     for setup in setups.iter_mut() {
         for _ in 0..10 {
             setup.step();
@@ -236,7 +228,6 @@ fn test_latency_compensation() {
 
     // both should be in roughly the same state 
     // (despite the fact that they recevied it at different times)
-
     let bodies = setups.iter().map(|s| {
         let mut body_entities = vec![];
         s.server_engine.get_state().collect_with(&component_filter!(crate::component::gorilla::Gorilla), &mut body_entities);

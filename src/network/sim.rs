@@ -38,7 +38,6 @@ impl<TMsg> TxChannel<TMsg> for SimTxChannel<TMsg> {
 
 struct SimRxChannel<TMsg> {
     time: Rc<Cell<Duration>>,
-    // next_read_step: u32,
     pipe: Rc<RefCell<VecDeque<SimMsg<TMsg>>>>
 }
 
@@ -63,26 +62,7 @@ impl<TMsg> RxChannel<TMsg> for SimRxChannel<TMsg> {
                 },
                 None => return Ok(())
             }
-
-            // if self.next_read_step > self.current_step.get() { 
-            //     break; 
-            // }
-            // match self.receiver.try_recv() {
-            //     Ok(front) => {
-            //         match front {
-            //             SimMsg::<TMsg>::Delay(delay) => {
-            //                     self.next_read_step = self.current_step.get() + delay;
-            //                 },
-            //             SimMsg::<TMsg>::Msg(msg) => {
-            //                     buffer.push(msg);
-            //                     // loop
-            //                 }
-            //             }
-            //         },
-            //     Err(_) => break
-            // }
         }
-        // Ok(())
     }
 }
 
@@ -102,22 +82,6 @@ impl<TTx, TRx> RxChannel<TRx> for SimNetworkEnd<TTx, TRx> {
         self.rx.dequeue(buffer)
     }
 }
-
-// pub struct SimServerContainer{
-//     timer: Rc<dyn TimerService>,
-// }
-
-// impl SimServerContainer{
-//     pub fn new() -> SimServerContainer{
-//         SimServerContainer{
-//             timer: Rc::new(crate::testing::MockContext::new(20))
-//         }
-//     }
-
-//     pub fn get_server(&self, latency: Duration) -> SimServer{
-//         SimServer::new(latency, Rc::clone(&self.timer))
-//     }
-// }
 
 pub struct SimServer {
     time: Rc<Cell<Duration>>,
@@ -139,19 +103,14 @@ impl SimServer {
         let pipe_up = Rc::new(RefCell::from(VecDeque::<SimMsg::<ClientMsg>>::new()));
         let pipe_down = Rc::new(RefCell::from(VecDeque::<SimMsg::<ServerMsg>>::new()));
 
-        // let (client_sender, server_receiver) = std::sync::mpsc::channel();
-        // let (server_sender, client_receiver) = std::sync::mpsc::channel();
-
         let client_tx_channel = SimTxChannel{
             time: Rc::clone(&self.time),
-            // last_tx_step: None,
             latency: self.latency,
             pipe: Rc::clone(&pipe_up)
         };
 
         let client_rx_channel = SimRxChannel{
             time: Rc::clone(&self.time),
-            // next_read_step: 0,
             pipe: Rc::clone(&pipe_down)
         };
 
@@ -162,14 +121,12 @@ impl SimServer {
 
         let server_tx_channel = SimTxChannel{
             time: Rc::clone(&self.time),
-            // last_tx_step: None,
             latency: self.latency,
             pipe: Rc::clone(&pipe_down)
         };
 
         let server_rx_channel = SimRxChannel{
             time: Rc::clone(&self.time),
-            // next_read_step: 0,
             pipe: Rc::clone(&pipe_up)
         };
 
@@ -181,10 +138,6 @@ impl SimServer {
         self.new_clients.push(server_end);
 
         client_end
-    }
-
-    pub fn step(&mut self, dt: Duration) {
-        self.time.set(self.time.get() + dt);
     }
 }
 

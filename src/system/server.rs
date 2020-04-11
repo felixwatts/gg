@@ -20,6 +20,8 @@ use crate::err::GgResult;
 use crate::system::system::System;
 use crate::component::client::Client;
 
+const LATENCY_MEASUREMENT_PERIOD: Duration = Duration::from_secs(5);
+
 pub struct ServerSystem<TServer, TNetwork> where TServer: Server<TNetwork>, TNetwork: TxChannel<ServerMsg> + RxChannel<ClientMsg> {
     server: TServer,
     new_client_buffer: Vec::<TNetwork>,
@@ -95,15 +97,15 @@ impl<TServer, TNetwork> ServerSystem<TServer, TNetwork> where TServer: Server<TN
             for msg in self.msg_buffer.drain(..) {
                 match msg {
                     ClientMsg::Input(input_event) => {
-                        println!("rx user input at {:#?}", context.time_since_start());
                         let gorilla_component = state.borrow_mut::<Gorilla>(client_entity).unwrap();
                         gorilla_component.input_events.push(input_event);
                     },
                     ClientMsg::Pong(tx_time) => {
-                        println!("rx pong at: {:#?}", context.time_since_start());
                         let latency = context.time_since_start() - tx_time;
                         let latency_component = state.borrow_mut::<Latency>(client_entity).unwrap();
                         latency_component.0 = latency.as_secs_f32();
+
+                        #[cfg(debug)]
                         println!("Client #{} ping: {:#?}", client_entity.get_id_number(), latency_component.0);
                     }
                     #[cfg(test)]
@@ -123,8 +125,6 @@ impl<TServer, TNetwork> ServerSystem<TServer, TNetwork> where TServer: Server<TN
             let is_keyframe = state.borrow_mut::<Body>(network_entity).unwrap().get_is_keyframe_and_reset();
             if !is_keyframe { continue; }   
 
-            println!("entity #{} keyframe", network_entity.get_id_number());
-            
             if let Ok(body) = state.get::<Body>(network_entity) {
                 let msg = ServerMsg::SetBody(network_entity.get_id_number(), body);
                 self.broadcast(state, &self.entity_buffer_1, msg)?;
@@ -151,7 +151,7 @@ impl<TServer, TNetwork> ServerSystem<TServer, TNetwork> where TServer: Server<TN
             if time < next_latency_measurement_time {
                 return Ok(())
             }
-            self.next_latency_measurement_time = Some(time + Duration::from_secs(1u64));
+            self.next_latency_measurement_time = Some(time + LATENCY_MEASUREMENT_PERIOD);
     
             let ping_msg = Ping(time);    
     
@@ -159,7 +159,6 @@ impl<TServer, TNetwork> ServerSystem<TServer, TNetwork> where TServer: Server<TN
             state.collect_with(&component_filter!(Client<TNetwork>), &mut self.entity_buffer_2); 
             for &network_entity in self.entity_buffer_2.iter() {
                 let network_component: &mut Client<TNetwork> = state.borrow_mut(network_entity)?;
-                println!("tx ping at: {:#?}", context.time_since_start());
                 network_component.0.enqueue(ping_msg.clone())?;
             }
         }

@@ -1,4 +1,3 @@
-use crate::context::TimerService;
 use crate::input::default_key_mapping;
 use crate::input::InputEvent;
 use recs::Ecs;
@@ -54,7 +53,7 @@ impl<TNetwork, TContext> System<TContext> for ClientSystem<TNetwork> where TNetw
     fn key_down(
         &mut self,
         _: &mut Ecs,
-        context: &mut TContext,
+        _: &mut TContext,
         keycode: KeyCode,
         _: KeyMods,
         repeat: bool) {
@@ -62,7 +61,6 @@ impl<TNetwork, TContext> System<TContext> for ClientSystem<TNetwork> where TNetw
 
             match self.key_mapping.get(&keycode) {
                 Some(&button) => {
-                    // println!("tx user input at {:#?}", context.time_since_start());
                     self.server.enqueue(ClientMsg::Input(InputEvent{button, is_down: true})).unwrap();
                 },
                 None => {}
@@ -124,30 +122,18 @@ impl<TNetwork, TContext> System<TContext> for ClientSystem<TNetwork> where TNetw
 
 #[test]
 fn test_ping_pong() {
-
     // build a simulated network
     let time = Rc::new(Cell::new(Duration::from_millis(0u64)));
-    let mut server = crate::network::sim::SimServer::new(Duration::from_millis(0), Rc::clone(&time));// , time: Rc<Cell<Duration>>) server_container.get_server(0u32);
+    let mut server = crate::network::sim::SimServer::new(Duration::from_millis(0), Rc::clone(&time));
     let network = server.connect();
     
-    // create a new CLientSystem to test and connect it to the network
+    // create a new ClientSystem to test and connect it to the network
     let mut subject = ClientSystem::new(network);
     
     // send the ClientSystem a Ping message
     let mut new_clients = vec![];
     server.get_new_clients(&mut new_clients);
     new_clients[0].enqueue(ServerMsg::Ping(std::time::Duration::from_millis(42u64))).unwrap();
-
-    
-
-    // let context = crate::testing::MockContext{    
-    //     average_delta: std::time::Duration::from_millis(0),
-    //     time_since_start: std::time::Duration::from_millis(0)
-    // };
-
-    // time.set(time.get() + Duration::from_millis(millis: u64))
-
-    // server_container.step();
 
     // Step the ClientSystem so that it can process the Ping message 
     let mut state = Ecs::new();

@@ -6,7 +6,8 @@ use crate::engine::Engine;
 
 pub struct MockContext{
     pub average_delta: Duration,
-    pub time_since_start: Duration
+    pub time_since_start: Duration,
+    network_time: Rc::<Cell::<Duration>>
 }
 
 impl TimerService for MockContext {
@@ -20,39 +21,36 @@ impl TimerService for MockContext {
 }
 
 impl MockContext {
-    pub fn new(average_delta_ms: u64) -> MockContext {
+    pub fn new(average_delta: Duration) -> MockContext {
         MockContext{
-            average_delta: Duration::from_millis(average_delta_ms),
-            time_since_start: Duration::from_millis(0u64)
+            average_delta: average_delta,
+            time_since_start: Duration::from_millis(0u64),
+            network_time: Rc::new(Cell::new(Duration::from_millis(0u64)))
         }
     }
 
     pub fn step(&mut self){
         self.time_since_start += self.average_delta;
+        self.network_time().set(self.time_since_start());
+    }
+
+    fn network_time(&self) -> Rc::<Cell::<Duration>> {
+        Rc::clone(&self.network_time)
     }
 }
 
 pub struct MockSetup{
     pub context: MockContext,
-    time: Rc<Cell<Duration>>,
     pub server_engine: Engine<MockContext>,
     pub client1_engine: Engine<MockContext>,
-    // pub client2_engine: Engine<MockContext>
 }
 
 impl MockSetup{
     pub fn new(network_latency: Duration, event_loop_period: Duration, is_latency_compensation_enabled: bool) -> MockSetup{
-        let mut context = MockContext{
-            average_delta: event_loop_period,
-            time_since_start: Duration::from_millis(0)
-        };
+        let mut context = MockContext::new(event_loop_period);
 
-        let time = Rc::new(Cell::new(Duration::from_millis(0u64)));
-    
-        // let network = crate::network::sim::SimServerContainer::new();
-        let mut server = crate::network::sim::SimServer::new(network_latency, Rc::clone(&time)); // network.get_server(network_latency);
+        let mut server = crate::network::sim::SimServer::new(network_latency, context.network_time());
         let client1_network = server.connect();
-        // let client2_network = server.connect();
     
         let server_engine: Engine::<MockContext> = crate::engine::Engine::new(vec![
             Box::new(crate::system::physics::PhysicsSystem{}),
@@ -66,18 +64,10 @@ impl MockSetup{
             Box::new(crate::system::client::ClientSystem::new(client1_network))
         ], None, &mut context).unwrap();
 
-        // let client2_engine: Engine::<MockContext> = crate::engine::Engine::new(vec![
-        //     Box::new(crate::system::physics::PhysicsSystem{}),
-        //     Box::new(crate::system::keyboard::KeyboardSystem{}),
-        //     Box::new(crate::system::client::ClientSystem::new(client2_network))
-        // ], None, &mut context).unwrap();
-
         let mut result = MockSetup{
             context,
-            time,
             server_engine,
-            client1_engine,
-            // client2_engine
+            client1_engine
         };
 
         // process new clients
@@ -87,13 +77,9 @@ impl MockSetup{
     }
 
     pub fn step(&mut self){
-        self.context.step();
-        
         self.client1_engine.update(&mut self.context).unwrap();
-        // self.client2_engine.update(&mut self.context).unwrap();
         self.server_engine.update(&mut self.context).unwrap();
-        self.time.set(self.context.time_since_start());
-        // std::thread::sleep(Duration::from_millis(5));
+        self.context.step();
     }
 }
 

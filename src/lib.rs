@@ -8,7 +8,7 @@ pub mod err;
 mod input;
 mod colors;
 
-// #[cfg(test)]
+#[cfg(test)]
 mod testing;
 
 extern crate nalgebra;
