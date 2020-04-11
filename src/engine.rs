@@ -76,6 +76,11 @@ impl<TContext> Engine<TContext> {
         }
     }
 
+    #[cfg(test)]
+    pub fn get_state(&self) -> &Ecs {
+        &self.state
+    }
+
     fn teardown_dead_entities(&mut self, context: &TContext) -> GgResult {
         let mut dead_entities = vec![];
         let filter = component_filter!(Dead);

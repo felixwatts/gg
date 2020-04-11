@@ -1,6 +1,7 @@
 pub mod sim;
 pub mod real;
 
+use std::time::Duration;
 use crate::input::InputEvent;
 use crate::component::sprite::Sprite;
 use crate::component::body::Body;
@@ -31,6 +32,7 @@ pub enum ServerMsg{
     SetBody(u64, Body),
     SetSprite(u64, Sprite),
     SetFocus(u64),
+    Ping(Duration),
     #[cfg(test)]
     Test(u32)
 }
@@ -42,6 +44,7 @@ pub enum ServerMsg{
 #[derive(Debug)]
 pub enum ClientMsg{
     Input(InputEvent),
+    Pong(Duration),
     #[cfg(test)]
     Test(u32)
 }

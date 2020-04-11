@@ -13,6 +13,14 @@ use crate::system::system::System;
 use crate::network::ClientMsg;
 use std::collections::HashMap;
 use crate::input::{KeyMapping};
+#[cfg(test)]
+use crate::network::Server;
+#[cfg(test)]
+use std::time::Duration;
+#[cfg(test)]
+use std::rc::Rc;
+#[cfg(test)]
+use std::cell::Cell;
 
 pub struct ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg>{
     server: TNetwork,
@@ -41,7 +49,7 @@ impl<TNetwork> ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxC
     }
 }
 
-impl<TNetwork, TContext> System<TContext> for ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg> {
+impl<TNetwork, TContext> System<TContext> for ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg>{
     fn key_down(
         &mut self,
         _: &mut Ecs,
@@ -100,6 +108,9 @@ impl<TNetwork, TContext> System<TContext> for ClientSystem<TNetwork> where TNetw
                     self.network_entity_id_mapping.remove(&server_id);
                     state.destroy_entity(client_id).unwrap();
                 },
+                ServerMsg::Ping(tx_time) => {
+                    self.server.enqueue(ClientMsg::Pong(tx_time))?;
+                }
                 #[cfg(test)]
                 ServerMsg::Test(_) => {}
             }
@@ -107,4 +118,30 @@ impl<TNetwork, TContext> System<TContext> for ClientSystem<TNetwork> where TNetw
 
         Ok(())
     }
+}
+
+#[test]
+fn test_ping_pong() {
+    // build a simulated network
+    let time = Rc::new(Cell::new(Duration::from_millis(0u64)));
+    let mut server = crate::network::sim::SimServer::new(Duration::from_millis(0), Rc::clone(&time));
+    let network = server.connect();
+    
+    // create a new ClientSystem to test and connect it to the network
+    let mut subject = ClientSystem::new(network);
+    
+    // send the ClientSystem a Ping message
+    let mut new_clients = vec![];
+    server.get_new_clients(&mut new_clients);
+    new_clients[0].enqueue(ServerMsg::Ping(std::time::Duration::from_millis(42u64))).unwrap();
+
+    // Step the ClientSystem so that it can process the Ping message 
+    let mut state = Ecs::new();
+    subject.update(&mut state, &0).unwrap();
+
+    // Check that it correctly responded with a Pong message
+    let mut client_msgs = vec![];
+    new_clients[0].dequeue(&mut client_msgs).unwrap();
+    assert_eq!(1, client_msgs.len());
+    assert_eq!(ClientMsg::Pong(std::time::Duration::from_millis(42u64)), client_msgs[0]);
 }

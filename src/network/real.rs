@@ -19,23 +19,17 @@ use std::io::Read;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 
 pub struct RealNetwork<TTx, TRx>{
-    #[allow(dead_code)]
-    tcp_stream: TcpStream,
     is_closed: Arc<AtomicBool>,
-    tx_q_out: Sender<TTx>,
-    rx_q_in: Receiver<TRx>,
-    #[allow(dead_code)]
-    tx_thread: JoinHandle<GgResult>,
-    #[allow(dead_code)]
-    rx_thread: JoinHandle<GgResult>,
-    
+    tx_q_out: Option<Sender<TTx>>,
+    rx_q_in: Option<Receiver<TRx>>,
+
     phantom1: PhantomData<TTx>,
     phantom2: PhantomData<TRx>,
 }
 
 fn rx_loop<TRx>(
     mut tcp_stream: TcpStream, 
-    rx_q_in: Sender<TRx>
+    rx_q_out: Sender<TRx>
 ) -> GgResult where TRx: DeserializeOwned + std::fmt::Debug {
     let mut buffer = vec![0u8; 2048];
     loop {
@@ -47,16 +41,16 @@ fn rx_loop<TRx>(
         #[cfg(debug)]
         println!("<-- {:?} {}", &msg, msg_length);
 
-        rx_q_in.send(msg)?;
+        rx_q_out.send(msg)?;
     }
 }
 
 fn tx_loop<TTx>(
     mut tcp_stream: TcpStream, 
-    tx_q_out: Receiver<TTx>
+    tx_q_in: Receiver<TTx>
 ) -> GgResult where TTx: Serialize + std::fmt::Debug {
     loop {
-        let msg = tx_q_out.recv()?;
+        let msg = tx_q_in.recv()?;
         let msg_buffer = serde_cbor::to_vec(&msg)?;
         let msg_length = msg_buffer.len();
         tcp_stream.write_u32::<byteorder::BigEndian>(msg_length as u32)?;
@@ -74,6 +68,8 @@ impl<TTx, TRx> RealNetwork<TTx, TRx>
 
     pub fn new(tcp_stream: TcpStream) -> GgResult<RealNetwork<TTx, TRx>> {
 
+        tcp_stream.set_nodelay(true)?;
+
         let (tx_q_out, tx_q_in) = channel::<TTx>();
         let (rx_q_out, rx_q_in) = channel::<TRx>();
 
@@ -84,33 +80,30 @@ impl<TTx, TRx> RealNetwork<TTx, TRx>
         let tx_stream = tcp_stream.try_clone()?;
         let rx_stream = tcp_stream.try_clone()?;
 
-        let tx_thread = std::thread::spawn(move || {
+        std::thread::spawn(move || {
             let result = tx_loop(tx_stream, tx_q_in);
             
             #[cfg(debug)]
-            println!("tx thread loop exited: {:?}", result);
+            println!("tx loop exited: {:?}", result);
             
             tx_is_closed.store(true, Ordering::Relaxed);
             result
         });
 
-        let rx_thread = std::thread::spawn(move || {
+        std::thread::spawn(move || {
             let result = rx_loop(rx_stream, rx_q_out);
 
             #[cfg(debug)]
-            println!("rx thread loop exited: {:?}", result);
+            println!("rx loop exited: {:?}", result);
 
             rx_is_closed.store(true, Ordering::Relaxed);
             result
         });
 
         Ok(RealNetwork{
-            tcp_stream,
             is_closed,
-            tx_q_out,
-            rx_q_in,
-            tx_thread,
-            rx_thread,
+            tx_q_out: Some(tx_q_out),
+            rx_q_in: Some(rx_q_in),
             phantom1: PhantomData{},
             phantom2: PhantomData{}
         })
@@ -122,7 +115,7 @@ impl<TTx, TRx> TxChannel<TTx> for RealNetwork<TTx, TRx> {
         match self.is_closed.load(std::sync::atomic::Ordering::Relaxed) {
             true => Err("channel closed".into()),
             false => {
-                self.tx_q_out.send(msg)?;
+                self.tx_q_out.as_ref().unwrap().send(msg)?;
                 Ok(())
             }
         }
@@ -135,7 +128,7 @@ impl<TTx, TRx> RxChannel<TRx> for RealNetwork<TTx, TRx> {
             true => Err("channel closed".into()),
             false => {
                 buffer.clear();
-                buffer.extend(self.rx_q_in.try_iter());
+                buffer.extend(self.rx_q_in.as_ref().unwrap().try_iter());
                 Ok(())
             }
         }
@@ -146,7 +139,7 @@ impl<TTx, TRx> RxChannel<TRx> for RealNetwork<TTx, TRx> {
 fn test_real_network() {
 
     let mut server = RealServer::new().unwrap();
-
+    std::thread::sleep(std::time::Duration::from_millis(50));
     let client_1_stream = TcpStream::connect("127.0.0.1:9001").unwrap();
     let mut client_1 = RealNetwork::<ClientMsg, ServerMsg>::new(client_1_stream).unwrap();
 
@@ -157,7 +150,6 @@ fn test_real_network() {
 
     let mut new_clients = vec![];
     server.get_new_clients(&mut new_clients);
-
     assert_eq!(2, new_clients.len());
 
     client_1.enqueue(ClientMsg::Test(1)).unwrap();
@@ -182,6 +174,9 @@ fn test_real_network() {
     assert_eq!(ClientMsg::Test(2), server_msg_buffer[0]);
     assert_eq!(ClientMsg::Test(4), server_msg_buffer[1]);
     assert_eq!(ClientMsg::Test(6), server_msg_buffer[2]);
+
+    server.get_new_clients(&mut new_clients);
+    assert_eq!(0, new_clients.len());
 }
 
 pub struct RealServer {
@@ -217,9 +212,4 @@ impl Server<RealNetwork<ServerMsg, ClientMsg>> for RealServer {
         buffer.clear();
         buffer.extend(self.new_client_recv.try_iter());
     }
-}
-
-#[test]
-fn test_real_server() {
-    unimplemented!();
 }

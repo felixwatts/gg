@@ -6,30 +6,32 @@ use ggez::Context;
 use ggez::event::EventHandler;
 use crate::engine::Engine;
 use ggez::GameResult;
-use crate::network::sim::SimServerContainer;
+use std::rc::Rc;
+use std::cell::Cell;
+use std::time::Duration;
 
 pub struct LocalClientServerSetup{
     client_engine: Option<Engine<ggez::Context>>,
     server_engine: Option<Engine<ggez::Context>>,
-    network: SimServerContainer,
+    network_time: Rc::<Cell::<Duration>>,
 }
 
 impl LocalClientServerSetup {
-    pub fn new(context: &mut ggez::Context, latency: u32) -> GgResult<LocalClientServerSetup>{
+    pub fn new(context: &mut ggez::Context, network_latency: Duration, is_latency_compensation_enabled: bool) -> GgResult<LocalClientServerSetup>{
 
         let mut result = LocalClientServerSetup{
             client_engine: None,
             server_engine: None,
-            network: SimServerContainer::new()
+            network_time: Rc::new(Cell::new(Duration::from_millis(0)))
         };
 
-        let mut server = result.network.get_server(latency);
+        let mut server = crate::network::sim::SimServer::new(network_latency, Rc::clone(&result.network_time));// result.network.get_server(latency);
         let client = server.connect();
 
         let server_systems: Vec<Box<dyn System<ggez::Context>>> = vec![
-            Box::new(crate::system::server::ServerSystem::new(server)?),
+            Box::new(crate::system::server::ServerSystem::new(server, is_latency_compensation_enabled)?),
             Box::new(crate::system::physics::PhysicsSystem{}),
-            Box::new(crate::system::gorilla::GorillaSystem{}),
+            Box::new(crate::system::gorilla::GorillaSystem{is_latency_compensation_enabled})
         ];
         let server_engine = Engine::new(server_systems, None, context)?;
 
@@ -49,9 +51,7 @@ impl LocalClientServerSetup {
 
 impl EventHandler for LocalClientServerSetup {
     fn update(&mut self, context: &mut Context) -> GameResult {
-
-        self.network.step();
-
+        self.network_time.set(ggez::timer::time_since_start(context));
         self.client_engine.as_mut().unwrap().update(context)?;
         self.server_engine.as_mut().unwrap().update(context)?; 
 
