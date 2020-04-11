@@ -195,6 +195,12 @@ impl GorillaSystem {
 
 #[test]
 fn test_latency_compensation() {
+    expect_latency_compensation(KeyCode::Return);
+    expect_latency_compensation(KeyCode::Space);
+}
+
+#[cfg(test)]
+fn expect_latency_compensation(user_input: KeyCode) {
     // create two setups, one with zero latency and no latency comp and
     // one with non-zero latency and latency comp
     let mut setups = vec![
@@ -213,7 +219,7 @@ fn test_latency_compensation() {
     for setup in setups.iter_mut() {
         setup.client1_engine.key_down_event(
             &mut setup.context,
-            KeyCode::Return,
+            user_input,
             KeyMods::empty(),
             false,
         );

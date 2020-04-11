@@ -84,5 +84,5 @@ impl MockSetup{
 }
 
 pub fn assert_roughly_eq(name: &'static str, expected: f32, actual: f32) {
-    assert!((expected - actual).abs() < 0.0001, "{}: {} != {}", name, expected, actual);
+    assert!((expected - actual).abs() < 0.002, "{}: {} != {}", name, expected, actual);
 }
