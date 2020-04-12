@@ -31,10 +31,6 @@ impl LocalClientServerSetup {
 
         let mut server = crate::network::sim::SimServer::new(network_latency, Rc::clone(&result.network_time));
 
-        // let client = server.connect();
-
-
-
         result.client_1_engine = Some(LocalClientServerSetup::build_client(crate::input::p1_key_mapping(), &mut server, context)?);
         result.client_2_engine = Some(LocalClientServerSetup::build_client(crate::input::p2_key_mapping(), &mut server, context)?);
 
@@ -45,16 +41,6 @@ impl LocalClientServerSetup {
             Box::new(crate::system::game::tag::TagGameSystem::new())
         ];
         result.server_engine = Some(Engine::new(server_systems, None, context)?);
-
-        // let client_systems: Vec<Box<dyn System<ggez::Context>>> = vec![
-        //     Box::new(crate::system::client::ClientSystem::new(client, crate::input::default_key_mapping())),
-        //     Box::new(crate::system::physics::PhysicsSystem{}),
-        //     Box::new(crate::system::render::RenderSystem::new(context)?),
-        // ];
-        // let client_engine = Engine::new(client_systems, None, context)?;
-
-        // result.client_engine = Some(client_engine);
-        // result.server_engine = Some(server_engine);
 
         Ok(result)
     }
@@ -85,7 +71,6 @@ impl EventHandler for LocalClientServerSetup {
     fn draw(&mut self, context: &mut Context) -> GameResult {
 
         self.client_1_engine.as_mut().unwrap().draw(context)?;
-        // self.client_1_engine.as_mut().unwrap().draw(context)?;
 
         Ok(())
     }

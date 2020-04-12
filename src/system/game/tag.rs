@@ -102,16 +102,6 @@ impl<TContext> System<TContext> for TagGameSystem{
                             _ => {}
                         }
                     }
-
-                    // if let Some(attached_anchor) = state.borrow::<Gorilla>(player).unwrap().attached_anchor {
-                    //     if attached_anchor == victory_anchor {
-                    //         // victory!
-
- 
-
-                    //         break;
-                    //     }
-                    // }
                 }
             }
 
