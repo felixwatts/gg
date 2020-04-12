@@ -130,7 +130,7 @@ impl SimServer {
     }
 }
 
-impl<'a> Server<SimNetworkEnd<ServerMsg, ClientMsg>> for SimServer {
+impl Server<SimNetworkEnd<ServerMsg, ClientMsg>> for SimServer {
     fn get_new_clients(&mut self, buffer: &mut Vec<SimNetworkEnd<ServerMsg, ClientMsg>>) {
         buffer.clear();
         buffer.extend(self.new_clients.drain(..));

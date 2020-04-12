@@ -19,7 +19,7 @@ impl ClientSetup {
         let tcp_stream = TcpStream::connect(server_addr)?;
         let network = RealNetwork::new(tcp_stream)?;
         let systems: Vec<Box<dyn System<ggez::Context>>> = vec![
-            Box::new(ClientSystem::new(network)),
+            Box::new(ClientSystem::new(network, crate::input::default_key_mapping())),
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::render::RenderSystem::new(context)?),
         ];

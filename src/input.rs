@@ -38,3 +38,17 @@ pub fn default_key_mapping() -> KeyMapping{
         (KeyCode::Return, Button::Two)
     ].iter().cloned().collect()
 }
+
+pub fn p1_key_mapping() -> KeyMapping{
+    [
+        (KeyCode::Z, Button::One),
+        (KeyCode::X, Button::Two)
+    ].iter().cloned().collect()
+}
+
+pub fn p2_key_mapping() -> KeyMapping{
+    [
+        (KeyCode::Left, Button::One),
+        (KeyCode::Right, Button::Two)
+    ].iter().cloned().collect()
+}
