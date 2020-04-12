@@ -13,3 +13,4 @@ recs = { git = "https://github.com/felixwatts/rustic-ecs.git" }
 serde = { version = "1.0", features = ["derive"] }
 serde_cbor = "*"
 byteorder = "*"
+png = "0.16.2"

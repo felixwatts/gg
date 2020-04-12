@@ -32,7 +32,7 @@ pub struct GorillaSystem {
 
 pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>, color: Color, key_mapping: Option<KeyMapping>, with_focus: bool) -> GgResult<EntityId> {
     let gorilla = ecs.create_entity();
-    ecs.set(gorilla, Sprite::new(color, [0.3, 0.3].into()))?;  
+    ecs.set(gorilla, Sprite::new(color, [0.6, 0.6].into(), Vector2::new(0.0, 0.0), Vector2::new(16.0/32.0, 16.0/32.0)))?;  
     ecs.set(gorilla, Gorilla::new(loc.clone()))?;
     ecs.set(gorilla, Body::new_dynamic(loc, Vector2::zeros(), Vector2::new(0.0, -10.0)))?;
     ecs.set(gorilla, Network)?;
@@ -53,7 +53,7 @@ pub fn spawn_anchor(ecs: &mut recs::Ecs, loc: Vector2<f32>) -> GgResult<EntityId
     let anchor = ecs.create_entity();
     ecs.set(anchor, Anchor)?;
     ecs.set(anchor, Body::new_static(loc))?;
-    ecs.set(anchor, Sprite::new(WHITE, [0.1, 0.1].into()))?;
+    ecs.set(anchor, Sprite::new(WHITE, [0.3, 0.3].into(), Vector2::new(16.0/32.0, 24.0/32.0), Vector2::new(8.0/32.0, 8.0/32.0)))?;
     ecs.set(anchor, Network)?;
 
     Ok(anchor)

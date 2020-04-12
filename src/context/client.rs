@@ -6,6 +6,7 @@ use ggez::graphics::Color;
 use ggez::graphics::Rect;
 use crate::err::GgResult;
 use crate::context::GfxService;
+use std::convert::TryInto;
 
 impl TimerService for ggez::Context {
     fn average_delta(&self) -> Duration{
@@ -19,7 +20,21 @@ impl TimerService for ggez::Context {
 
 impl GfxService for ggez::Context {
     fn new_img(&mut self, _filename: &'static str) -> GgResult<ggez::graphics::Image> {
-        let img = ggez::graphics::Image::solid(self, 1u16, ggez::graphics::Color{r: 1.0, g: 1.0, b: 1.0, a: 1.0 })?;
+
+        let png_bytes = include_bytes!("../../resources/gfx.png");
+        let decoder = png::Decoder::new(&png_bytes[..]);
+        let (info, mut reader) = decoder.read_info().unwrap();
+        let mut buf = vec![0; info.buffer_size()];
+        reader.next_frame(&mut buf).unwrap();
+
+        let mut img = ggez::graphics::Image::from_rgba8(
+            self,
+            info.width.try_into().unwrap(),
+            info.height.try_into().unwrap(),
+            &buf
+        )?;
+        img.set_filter(ggez::graphics::FilterMode::Nearest);
+
         Ok(img)
     }
 

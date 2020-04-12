@@ -26,7 +26,9 @@ impl TagGameSystem{
         match is_on_it {
             true => {
                 self.on_it_player = Some(player);
-                state.borrow_mut::<Sprite>(player).unwrap().size = Vector2::new(SPRITE_SIZE_ON_IT, SPRITE_SIZE_ON_IT);
+                // state.set(gorilla, Sprite::new(color, [0.3, 0.3].into(), Vector2::new(0.0, 0.0), Vector2::new(16.0/32.0, 16.0/32.0)))?;
+                // state.borrow_mut::<Sprite>(player).unwrap().size = Vector2::new(SPRITE_SIZE_ON_IT, SPRITE_SIZE_ON_IT);                                
+                state.borrow_mut::<Sprite>(player).unwrap().src_loc = Vector2::new(0.0, 0.0);
             },
             false => {
                 if let Some(currently_on_it) = self.on_it_player {
@@ -35,7 +37,8 @@ impl TagGameSystem{
                     }
                 }
 
-                state.borrow_mut::<Sprite>(player).unwrap().size = Vector2::new(SPRITE_SIZE_NORMAL, SPRITE_SIZE_NORMAL);
+                // state.borrow_mut::<Sprite>(player).unwrap().size = Vector2::new(SPRITE_SIZE_NORMAL, SPRITE_SIZE_NORMAL);
+                state.borrow_mut::<Sprite>(player).unwrap().src_loc = Vector2::new(0.0, 16.0/32.0);
             }
         };
 
