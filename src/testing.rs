@@ -61,7 +61,7 @@ impl MockSetup{
         let client1_engine: Engine::<MockContext> = crate::engine::Engine::new(vec![
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::keyboard::KeyboardSystem{}),
-            Box::new(crate::system::client::ClientSystem::new(client1_network))
+            Box::new(crate::system::client::ClientSystem::new(client1_network, crate::input::default_key_mapping()))
         ], None, &mut context).unwrap();
 
         let mut result = MockSetup{

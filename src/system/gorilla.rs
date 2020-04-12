@@ -15,6 +15,7 @@ use recs::EntityId;
 use crate::input::Button;
 use crate::component::sprite::Sprite;
 use crate::colors::WHITE;
+use crate::component::gorilla::GorillaEvent;
 
 #[cfg(test)]
 use std::time::Duration;
@@ -78,6 +79,7 @@ impl<TContext> System<TContext> for GorillaSystem {
         let filter = component_filter!(Gorilla, Body);
         state.collect_with(&filter, &mut ids);
         for &entity in ids.iter() {
+            state.borrow_mut::<Gorilla>(entity).unwrap().events.clear();
             self.respawn_if_outside_bounds(entity, state)?;
             self.process_user_input(entity, state)?;
         }
@@ -91,6 +93,9 @@ impl GorillaSystem {
         if state.borrow::<Body>(entity).unwrap().get_loc().y < -20.0 {
             let spawn_location = state.borrow::<Gorilla>(entity).unwrap().spawn_location.clone();
             state.set(entity, Body::new_dynamic(spawn_location.into(), Vector2::zeros(), Vector2::new(0.0, -10.0))).unwrap();
+
+            state.borrow_mut::<Gorilla>(entity).unwrap().events.push(GorillaEvent::DetachFromAnchor());
+            state.borrow_mut::<Gorilla>(entity).unwrap().events.push(GorillaEvent::Spawn());
         }
 
         Ok(())
@@ -176,6 +181,7 @@ impl GorillaSystem {
             let anchor_loc = state.borrow::<Body>(anchor).unwrap().get_loc().clone();
             let attached_body = state.borrow::<Body>(gorilla).unwrap().to_attached(anchor_loc);
             state.set(gorilla, attached_body).unwrap();
+            state.borrow_mut::<Gorilla>(gorilla).unwrap().events.push(GorillaEvent::AttachToAnchor(anchor));
         }
     }
 
@@ -190,6 +196,7 @@ impl GorillaSystem {
         }
         let detached_body = gorilla_body.to_detached();
         state.set(gorilla, detached_body).unwrap();
+        state.borrow_mut::<Gorilla>(gorilla).unwrap().events.push(GorillaEvent::DetachFromAnchor());        
     }
 }
 

@@ -15,6 +15,7 @@ impl ServerSetup{
             Box::new(crate::system::server::ServerSystem::new(server, true)?),
             Box::new(crate::system::physics::PhysicsSystem{}),
             Box::new(crate::system::gorilla::GorillaSystem{is_latency_compensation_enabled: true}),
+            Box::new(crate::system::game::tag::TagGameSystem::new()),
         ];
         let engine = Engine::new(systems, None, &mut context)?;
         Ok(ServerSetup{

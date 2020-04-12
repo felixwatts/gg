@@ -1,4 +1,3 @@
-use crate::input::default_key_mapping;
 use crate::input::InputEvent;
 use recs::Ecs;
 use crate::network::RxChannel;
@@ -29,11 +28,11 @@ pub struct ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChann
 }
 
 impl<TNetwork> ClientSystem<TNetwork> where TNetwork: TxChannel<ClientMsg> + RxChannel<ServerMsg>{
-    pub fn new(server: TNetwork) -> ClientSystem<TNetwork> {
+    pub fn new(server: TNetwork, key_mapping: KeyMapping) -> ClientSystem<TNetwork> {
         ClientSystem{
             server,
             network_entity_id_mapping: HashMap::<u64, EntityId>::new(),
-            key_mapping: default_key_mapping()
+            key_mapping
         }
     }
 
@@ -128,7 +127,7 @@ fn test_ping_pong() {
     let network = server.connect();
     
     // create a new ClientSystem to test and connect it to the network
-    let mut subject = ClientSystem::new(network);
+    let mut subject = ClientSystem::new(network, crate::input::default_key_mapping());
     
     // send the ClientSystem a Ping message
     let mut new_clients = vec![];
