@@ -50,8 +50,15 @@ steps:
   - script: cargo build --release --all
     displayName: Cargo build
     
+  - publish: $(System.DefaultWorkingDirectory)/target/release/ggc.exe
+    artifact: ggc-$(imageName)
+    condition: eq( variables['Agent.OS'], 'Windows_NT' )
+    displayName: Publish artefact (Windows)
+
   - publish: $(System.DefaultWorkingDirectory)/target/release/ggc
     artifact: ggc-$(imageName)
+    condition: ne( variables['Agent.OS'], 'Windows_NT' )
+    displayName: Publish artefact (Linux + MacOS)
 
   - script: |
       git clone git@github.com:felixwatts/felixwatts.github.io.git
