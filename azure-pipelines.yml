@@ -59,12 +59,3 @@ steps:
     artifact: ggc-$(imageName)
     condition: ne( variables['Agent.OS'], 'Windows_NT' )
     displayName: Publish artefact (Linux + MacOS)
-
-  - script: |
-      git clone git@github.com:felixwatts/felixwatts.github.io.git
-      cp $(System.DefaultWorkingDirectory)/target/release/ggc $(System.DefaultWorkingDirectory)/felixwatts.github.io.git/gg/ggc-$(imageName)
-      cd felixwatts.github.io.git
-      git add .
-      git commit -m "update binary ggc-$(imageName)"
-      git push
-    displayName: push binary to github pages
