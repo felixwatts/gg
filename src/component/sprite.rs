@@ -11,16 +11,20 @@ pub struct Sprite{
     pub color: Color,
     pub location: Vector2<f32>,
     pub orientation: f32,
-    pub size: Vector2<f32>
+    pub size: Vector2<f32>,
+    pub src_loc: Vector2<f32>,
+    pub src_size: Vector2<f32>
 }
 
 impl Sprite{
-    pub fn new(color: Color, size: Vector2<f32>) -> Sprite {
+    pub fn new(color: Color, size: Vector2<f32>, src_loc: Vector2<f32>, src_size: Vector2<f32>) -> Sprite {
         Sprite{
-            color: color,
+            color,
             location: [0.0, 0.0].into(),
             orientation: 0.0,
-            size: size
+            size,
+            src_loc,
+            src_size
         }
     }
 }

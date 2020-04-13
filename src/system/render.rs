@@ -15,7 +15,7 @@ pub struct RenderSystem {
 impl<TContext> System<TContext> for RenderSystem where TContext: GfxService {
     fn draw(&mut self, state: &Ecs, context: &mut TContext) -> GgResult {
         self.set_focus(state, context)?;
-        context.clear([0.0, 0.0, 0.0, 1.0].into());
+        context.clear([0.5, 0.0, 0.5, 1.0].into());
         self.draw_sprites(state, context)?;
         context.present()?;
         Ok(())
@@ -27,8 +27,9 @@ fn entity_to_draw_param(entity: EntityId, ecs: &Ecs) -> DrawParam {
     DrawParam::new()
         .offset([0.5, 0.5])
         .color(sprite.color.into())
-        .scale(sprite.size)
-        .rotation(sprite.orientation)
+        .scale([sprite.size.x / (sprite.src_size.x * 32.0), sprite.size.y / (sprite.src_size.y * 32.0)])
+        .rotation(sprite.orientation+ std::f32::consts::PI)
+        .src(ggez::graphics::Rect{x: sprite.src_loc.x, y: sprite.src_loc.y, w: sprite.src_size.x, h: sprite.src_size.y})
         .dest([sprite.location.x, sprite.location.y])
 }
 
