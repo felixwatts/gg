@@ -10,7 +10,7 @@ pool:
   vmImage: 'ubuntu-16.04'
 
 steps:
-  - script: apt install libasound2-dev
+  - script: sudo apt install libasound2-dev
     displayName: Install ALSA
   - script: |
       curl https://sh.rustup.rs -sSf | sh -s -- -y
