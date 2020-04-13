@@ -14,7 +14,7 @@ strategy:
       imageName: 'vs2017-win2016'
       rustup_toolchain: stable
     mac:
-      imageName: 'macos-10.13'
+      imageName: 'macOS-latest'
       rustup_toolchain: stable
     linux:
       imageName: 'ubuntu-16.04'
