@@ -10,21 +10,15 @@ trigger:
 
 strategy:
   matrix:
-    windows-stable:
+    windows:
       imageName: 'vs2017-win2016'
       rustup_toolchain: stable
-    mac-stable:
+    mac:
       imageName: 'macos-10.13'
       rustup_toolchain: stable
-    linux-stable:
+    linux:
       imageName: 'ubuntu-16.04'
       rustup_toolchain: stable
-    linux-beta:
-      imageName: 'ubuntu-16.04'
-      rustup_toolchain: beta
-    linux-nightly:
-      imageName: 'ubuntu-16.04'
-      rustup_toolchain: nightly
 
 pool:
   vmImage: $(imageName)
