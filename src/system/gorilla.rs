@@ -46,6 +46,8 @@ pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>, color: Color, key_m
         ecs.set(gorilla, Keyboard(km)).unwrap();
     }
 
+    ecs.borrow_mut::<Gorilla>(gorilla).unwrap().events.push(GorillaEvent::Enter());
+
     Ok(gorilla)
 }
 

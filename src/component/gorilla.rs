@@ -5,7 +5,8 @@ use crate::input::InputEvent;
 pub enum GorillaEvent{
     AttachToAnchor(EntityId),
     DetachFromAnchor(),
-    Spawn()
+    Spawn(),
+    Enter()
 }
 
 pub struct Gorilla{

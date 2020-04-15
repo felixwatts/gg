@@ -21,7 +21,7 @@ fn get_new_players(state: &mut Ecs) -> Vec::<EntityId> {
             .unwrap()
             .events
             .iter()
-            .any(|e| match e { GorillaEvent::Spawn() => true, _ => false }))
+            .any(|e| match e { GorillaEvent::Enter() => true, _ => false }))
         .collect::<Vec::<_>>()
 }
 
