@@ -53,4 +53,10 @@ impl From<recs::NotFound> for GgError {
     }
 }
 
+impl From<daemonize::DaemonizeError> for GgError {
+    fn from(error: daemonize::DaemonizeError) -> Self {
+        GgError(error.to_string())
+    }
+}
+
 pub type GgResult<T = ()> = Result<T, GgError>;
