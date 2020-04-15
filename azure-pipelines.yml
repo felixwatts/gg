@@ -48,14 +48,23 @@ steps:
     displayName: Cargo test
 
   - script: cargo build --release --bin ggc
-    displayName: Cargo build
+    displayName: build client
+
+  - script: cargo build --release --bin ggd --features "server"
+    displayName: build server
+    condition: eq( variables['Agent.OS'], 'Linux' )
     
   - publish: $(System.DefaultWorkingDirectory)/target/release/ggc.exe
     artifact: ggc-$(imageName)
     condition: eq( variables['Agent.OS'], 'Windows_NT' )
-    displayName: Publish artefact (Windows)
+    displayName: Publish client artefact (Windows)
 
   - publish: $(System.DefaultWorkingDirectory)/target/release/ggc
     artifact: ggc-$(imageName)
     condition: ne( variables['Agent.OS'], 'Windows_NT' )
-    displayName: Publish artefact (Linux + MacOS)
+    displayName: Publish client artefact (Linux + MacOS)
+
+  - publish: $(System.DefaultWorkingDirectory)/target/release/ggd
+    artifact: ggd
+    condition: eq( variables['Agent.OS'], 'Linux' )
+    displayName: Publish server artefact
