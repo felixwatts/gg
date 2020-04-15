@@ -47,7 +47,7 @@ steps:
   - script: cargo test --all
     displayName: Cargo test
 
-  - script: cargo build --release --all
+  - script: cargo build --release --bin ggc
     displayName: Cargo build
     
   - publish: $(System.DefaultWorkingDirectory)/target/release/ggc.exe
