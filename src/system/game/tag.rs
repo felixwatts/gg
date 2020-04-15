@@ -11,6 +11,20 @@ pub struct TagGameSystem{
     victory_anchor: Option<EntityId>
 }
 
+fn get_new_players(state: &mut Ecs) -> Vec::<EntityId> {
+    let mut players = vec![];
+    state.collect_with(&component_filter!(Gorilla), &mut players);
+    players
+        .drain(..)
+        .filter(|p| state
+            .borrow::<Gorilla>(*p)
+            .unwrap()
+            .events
+            .iter()
+            .any(|e| match e { GorillaEvent::Spawn() => true, _ => false }))
+        .collect::<Vec::<_>>()
+}
+
 impl TagGameSystem{
     pub fn new() -> TagGameSystem{
         TagGameSystem{
@@ -51,6 +65,11 @@ impl<TContext> System<TContext> for TagGameSystem{
 
             if players.len() == 0 { 
                 return Ok(())
+            }
+
+            // new players are not on it
+            for &player in get_new_players(state).iter() {
+                self.set_player_state(player, false, state)?;
             }
 
             // on-it player left game
