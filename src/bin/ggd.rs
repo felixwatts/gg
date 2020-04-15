@@ -8,11 +8,11 @@ use gg::err::GgResult;
 
 pub fn main() -> GgResult { 
 
-    let stdout = File::create("/tmp/daemon.out").unwrap();
-    let stderr = File::create("/tmp/daemon.err").unwrap();
+    let stdout = File::create("/tmp/ggd.out").unwrap();
+    let stderr = File::create("/tmp/ggd.err").unwrap();
 
     let daemonize = Daemonize::new()
-        .pid_file("/tmp/test.pid")
+        .pid_file("/tmp/ggd.pid")
         .stdout(stdout)
         .stderr(stderr)
         .exit_action(|| println!("ggd started"));
