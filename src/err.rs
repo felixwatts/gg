@@ -53,6 +53,7 @@ impl From<recs::NotFound> for GgError {
     }
 }
 
+#[cfg(feature = "server")]
 impl From<daemonize::DaemonizeError> for GgError {
     fn from(error: daemonize::DaemonizeError) -> Self {
         GgError(error.to_string())

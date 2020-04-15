@@ -1,17 +1,17 @@
 
 extern crate gg;
-#[cfg(target_os = "linux")]
+#[cfg(feature = "server")]
 extern crate daemonize;
 
-#[cfg(target_os = "linux")]
+#[cfg(feature = "server")]
 use std::fs::File;
-#[cfg(target_os = "linux")]
+#[cfg(feature = "server")]
 use daemonize::Daemonize;
 use gg::err::GgResult;
 
 
 pub fn main() -> GgResult { 
-    #[cfg(target_os = "linux")]
+    #[cfg(feature = "server")]
     {
         let stdout = File::create("/tmp/ggd.out").unwrap();
         let stderr = File::create("/tmp/ggd.err").unwrap();
@@ -22,7 +22,7 @@ pub fn main() -> GgResult {
             .stderr(stderr)
             .exit_action(|| println!("ggd started"));
 
-        match daemonize.start() {
+        return match daemonize.start() {
             Ok(_) => {
                 let mut setup = gg::setup::new_server()?;
                 loop{
@@ -33,5 +33,6 @@ pub fn main() -> GgResult {
         }
     }
 
+    #[cfg(not(feature = "server"))]
     Ok(())
 }

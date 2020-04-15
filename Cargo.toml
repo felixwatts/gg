@@ -4,14 +4,18 @@ version = "0.1.0"
 authors = ["Felix Watts"]
 edition = "2018"
 
+[features]
+server = ["daemonize"]
+
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 nalgebra = { version = "0.18", features = ["serde-serialize"] }
-ggez = "*"
 recs = { git = "https://github.com/felixwatts/rustic-ecs.git" }
 serde = { version = "1.0", features = ["derive"] }
 serde_cbor = "*"
 byteorder = "*"
+ggez = "*"
 png = "0.16.2"
-daemonize = "*"
+
+daemonize = { version = "*", optional = true }
