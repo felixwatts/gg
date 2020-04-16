@@ -3,7 +3,7 @@ use ggez::event::KeyMods;
 use ggez::event::KeyCode;
 use crate::component::Owns;
 use crate::component::Dead;
-use crate::system::system::System;
+use crate::system::System;
 use crate::err::GgResult;
 
 pub struct Engine<TContext>{
@@ -48,7 +48,7 @@ impl<TContext> Engine<TContext> {
     pub fn draw(&mut self, context: &mut TContext) -> GgResult {
 
         for system in self.systems.iter_mut() {
-            system.draw(&mut self.state, context)?;
+            system.draw(&self.state, context)?;
         }
 
         Ok(())

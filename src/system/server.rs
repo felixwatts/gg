@@ -17,7 +17,7 @@ use crate::component::Network;
 use crate::component::gorilla::Gorilla;
 use crate::network::{ClientMsg, ServerMsg};
 use crate::err::GgResult;
-use crate::system::system::System;
+use crate::system::System;
 use crate::component::client::Client;
 
 const LATENCY_MEASUREMENT_PERIOD: Duration = Duration::from_secs(5);
@@ -73,7 +73,7 @@ impl<TServer, TNetwork> ServerSystem<TServer, TNetwork> where TServer: Server<TN
                     state.borrow_mut::<Client<TNetwork>>(client_entity).unwrap().0.enqueue(msg)?;
                 }
 
-                if let Ok(_) = state.get::<Focus>(network_entity) {
+                if state.has::<Focus>(network_entity).unwrap() {
                     let msg = ServerMsg::SetFocus(network_entity.get_id_number());
                     state.borrow_mut::<Client<TNetwork>>(client_entity).unwrap().0.enqueue(msg)?;
                 }
@@ -89,7 +89,7 @@ impl<TServer, TNetwork> ServerSystem<TServer, TNetwork> where TServer: Server<TN
         for &client_entity in self.entity_buffer_1.iter() {
             let client_component = state.borrow_mut::<Client<TNetwork>>(client_entity).unwrap();
 
-            if let Err(_) = client_component.0.dequeue(&mut self.msg_buffer) {
+            if client_component.0.dequeue(&mut self.msg_buffer).is_err() {
                 self.disconnect_client(state, client_entity);
                 continue;
             }
@@ -135,7 +135,7 @@ impl<TServer, TNetwork> ServerSystem<TServer, TNetwork> where TServer: Server<TN
                 self.broadcast(state, &self.entity_buffer_1, msg)?;
             }
 
-            if let Ok(_) = state.get::<Focus>(network_entity) {
+            if state.has::<Focus>(network_entity).unwrap() {
                 let msg = ServerMsg::SetFocus(network_entity.get_id_number());
                 self.broadcast(state, &self.entity_buffer_1, msg)?;
             }
@@ -169,7 +169,7 @@ impl<TServer, TNetwork> ServerSystem<TServer, TNetwork> where TServer: Server<TN
     fn broadcast(&self, state: &mut Ecs, to: &[EntityId], msg: ServerMsg) -> GgResult {
         for &client_entity in to.iter() {
             if let Ok(client_component) = state.borrow_mut::<Client<TNetwork>>(client_entity){
-                if let Err(_) = client_component.0.enqueue(msg.clone()) {
+                if client_component.0.enqueue(msg.clone()).is_err() {
                     self.disconnect_client(state, client_entity);
                 }
             }

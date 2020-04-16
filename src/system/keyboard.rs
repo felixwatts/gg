@@ -5,24 +5,21 @@ use crate::component::gorilla::Gorilla;
 use ggez::event::KeyMods;
 use ggez::event::KeyCode;
 use recs::Ecs;
-use crate::system::system::System;
+use crate::system::System;
 
 pub struct KeyboardSystem {
 }
 
-fn process_keyboard_event(state: &mut Ecs, keycode: &KeyCode, is_down: bool) -> GgResult{
+fn process_keyboard_event(state: &mut Ecs, keycode: KeyCode, is_down: bool) -> GgResult{
     let mut gorilla_entities = vec![];
     state.collect_with(&component_filter!(Gorilla, Keyboard), &mut gorilla_entities);
 
     for gorilla_entity in gorilla_entities{
         let keyboard_component: &Keyboard = state.borrow(gorilla_entity).unwrap();
-        match keyboard_component.0.get(keycode) {
-            Some(&button) => {
-                let gorilla_component = state.borrow_mut::<Gorilla>(gorilla_entity).unwrap();
-                gorilla_component.input_events.push(InputEvent{button, is_down});
-                break;
-            },
-            None => {}
+        if let Some(&button) = keyboard_component.0.get(&keycode) {
+            let gorilla_component = state.borrow_mut::<Gorilla>(gorilla_entity).unwrap();
+            gorilla_component.input_events.push(InputEvent{button, is_down});
+            break;
         }
     }
 
@@ -37,7 +34,7 @@ impl<TContext> System<TContext> for KeyboardSystem{
         _: KeyMods,
         repeat: bool) {
             if repeat { return }
-            process_keyboard_event(state, &keycode, true).unwrap();
+            process_keyboard_event(state, keycode, true).unwrap();
         }
 
     fn key_up(&mut self,
@@ -45,6 +42,6 @@ impl<TContext> System<TContext> for KeyboardSystem{
         _: &mut TContext,
         keycode: KeyCode,
         _: KeyMods) {
-            process_keyboard_event(state, &keycode, false).unwrap();
+            process_keyboard_event(state, keycode, false).unwrap();
         }
 }

@@ -3,7 +3,7 @@ use crate::system::gorilla::spawn_anchor;
 use crate::input::new_key_mapping;
 use crate::err::GgResult;
 use recs::Ecs;
-use crate::system::system::System;
+use crate::system::System;
 use ggez::event::KeyCode;
 use crate::colors::Color;
 

@@ -1,5 +1,5 @@
 use crate::component::sprite::Sprite;
-use crate::system::system::System;
+use crate::system::System;
 use crate::component::gorilla::{Gorilla, GorillaEvent};
 use crate::err::GgResult;
 use recs::Ecs;
@@ -34,21 +34,18 @@ impl TagGameSystem{
     }
     
     fn set_player_state(&mut self, player: EntityId, is_on_it: bool, state: &mut Ecs) -> GgResult {
-        match is_on_it {
-            true => {
-                self.on_it_player = Some(player);                              
-                state.borrow_mut::<Sprite>(player).unwrap().src_loc = Vector2::new(0.0, 0.0);
-            },
-            false => {
-                if let Some(currently_on_it) = self.on_it_player {
-                    if currently_on_it == player {
-                        self.on_it_player = None;
-                    }
+        if is_on_it {
+            self.on_it_player = Some(player);                              
+            state.borrow_mut::<Sprite>(player).unwrap().src_loc = Vector2::new(0.0, 0.0);
+        } else {
+            if let Some(currently_on_it) = self.on_it_player {
+                if currently_on_it == player {
+                    self.on_it_player = None;
                 }
-
-                state.borrow_mut::<Sprite>(player).unwrap().src_loc = Vector2::new(0.0, 16.0/32.0);
             }
-        };
+
+            state.borrow_mut::<Sprite>(player).unwrap().src_loc = Vector2::new(0.0, 16.0/32.0);
+        }
 
         Ok(())
     }
@@ -63,7 +60,7 @@ impl<TContext> System<TContext> for TagGameSystem{
             let mut players = vec![];
             state.collect_with(&component_filter!(Gorilla), &mut players);
 
-            if players.len() == 0 { 
+            if players.is_empty() { 
                 return Ok(())
             }
 
@@ -80,7 +77,7 @@ impl<TContext> System<TContext> for TagGameSystem{
             }
 
             // if there is no on-it player then make someone on-it
-            if let None = self.on_it_player {
+            if self.on_it_player.is_none() {
                 self.set_player_state(players[0], true, state)?
             }
 
@@ -106,16 +103,13 @@ impl<TContext> System<TContext> for TagGameSystem{
                     }
 
                     for event in state.borrow::<Gorilla>(player).unwrap().events.iter() {
-                        match event {
-                            GorillaEvent::AttachToAnchor(anchor) => {
-                                if *anchor == victory_anchor {
-                                    self.set_player_state(on_it_player, false, state)?;
-                                    self.set_player_state(player, true, state)?;
+                        if let GorillaEvent::AttachToAnchor(anchor) = event {
+                            if *anchor == victory_anchor {
+                                self.set_player_state(on_it_player, false, state)?;
+                                self.set_player_state(player, true, state)?;
 
-                                    break;
-                                }
-                            },
-                            _ => {}
+                                break;
+                            }
                         }
                     }
                 }

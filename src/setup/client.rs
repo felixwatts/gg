@@ -2,7 +2,7 @@ use crate::network::real::RealNetwork;
 use ggez::event::KeyMods;
 use ggez::event::KeyCode;
 use crate::err::GgResult;
-use crate::system::system::System;
+use crate::system::System;
 use ggez::Context;
 use ggez::event::EventHandler;
 use crate::engine::Engine;
@@ -15,7 +15,7 @@ pub struct ClientSetup {
 }
 
 impl ClientSetup {
-    pub fn new(context: &mut ggez::Context, server_addr: &String) -> GgResult<ClientSetup> {
+    pub fn new(context: &mut ggez::Context, server_addr: &str) -> GgResult<ClientSetup> {
         let tcp_stream = TcpStream::connect(server_addr)?;
         let network = RealNetwork::new(tcp_stream)?;
         let systems: Vec<Box<dyn System<ggez::Context>>> = vec![

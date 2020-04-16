@@ -2,7 +2,7 @@ use crate::context::GfxService;
 use crate::component::Focus;
 use crate::component::sprite::Sprite;
 use ggez::graphics::DrawParam;
-use crate::system::system::System;
+use crate::system::System;
 use recs::{Ecs, EntityId};
 use ggez::graphics::spritebatch::SpriteBatch;
 use crate::err::GgResult;

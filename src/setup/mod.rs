@@ -23,44 +23,43 @@ pub struct Setup<TSetup> where TSetup: EventHandler {
 }
 
 pub fn new_server() -> GgResult<ServerSetup>{
-    let context = crate::context::server::ServerContext::new();
-    let setup = ServerSetup::new(context)?;
+    let setup = ServerSetup::new(Default::default())?;
     Ok(setup)
 }
 
-pub fn new_client(server_addr: &String) -> GgResult<Setup<ClientSetup>>{
+pub fn new_client(server_addr: &str) -> GgResult<Setup<ClientSetup>>{
     let (mut context, event_loop) = build_context()?;
 
-    let setup = ClientSetup::new(&mut context, server_addr)?;
+    let game = ClientSetup::new(&mut context, server_addr)?;
 
     Ok(Setup{
-        context: context,
-        event_loop: event_loop,
-        game: setup
+        context,
+        event_loop,
+        game
     })
 }
 
 pub fn new_local() -> GgResult<Setup<LocalSetup>> {
     let (mut context, event_loop) = build_context()?;
 
-    let setup = LocalSetup::new(&mut context)?;
+    let game = LocalSetup::new(&mut context)?;
 
     Ok(Setup{
-        context: context,
-        event_loop: event_loop,
-        game: setup
+        context,
+        event_loop,
+        game
     })
 }
 
 pub fn new_local_client_server(latency: Duration, is_latency_compensation_enabled: bool) -> GgResult<Setup<LocalClientServerSetup>> {
     let (mut context, event_loop) = build_context()?;
 
-    let setup = LocalClientServerSetup::new(&mut context, latency, is_latency_compensation_enabled)?;
+    let game = LocalClientServerSetup::new(&mut context, latency, is_latency_compensation_enabled)?;
 
     Ok(Setup{
-        context: context,
-        event_loop: event_loop,
-        game: setup
+        context,
+        event_loop,
+        game
     })
 }
 

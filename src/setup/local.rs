@@ -1,6 +1,6 @@
 use crate::colors::{RED, CYAN};
 use crate::err::GgResult;
-use crate::system::system::System;
+use crate::system::System;
 use ggez::GameResult;
 use ggez::event::KeyMods;
 use ggez::event::KeyCode;

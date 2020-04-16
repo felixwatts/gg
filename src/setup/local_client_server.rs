@@ -1,5 +1,5 @@
 use crate::input::KeyMapping;
-use crate::system::system::System;
+use crate::system::System;
 use crate::err::GgResult;
 use ggez::event::KeyMods;
 use ggez::event::KeyCode;

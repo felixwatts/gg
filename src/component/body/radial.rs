@@ -116,8 +116,8 @@ fn expect_accel_along_tangent(loc: f32, radius: f32, ax: f32, ay: f32, expected:
     let subject = RadialBody {
         keyframe_countdown: 0.0,
         origin: Vector2::<f32>::zeros(),
-        radius: radius,
-        loc: loc,
+        radius,
+        loc,
         vel: 0.0,
         acc: Vector2::new(ax, ay),
     };
@@ -147,8 +147,8 @@ fn expect_radius(loc: f32, radius: f32, x: f32, y: f32) {
     let subject = RadialBody {
         keyframe_countdown: 0.0,
         origin: Vector2::<f32>::zeros(),
-        radius: radius,
-        loc: loc,
+        radius,
+        loc,
         vel :0.0,
         acc: Vector2::<f32>::zeros(),
     };
@@ -179,8 +179,8 @@ fn expect_tangent(loc: f32, radius: f32, x: f32, y: f32) {
     let subject = RadialBody {
         keyframe_countdown: 0.0,
         origin: Vector2::<f32>::zeros(),
-        radius: radius,
-        loc: loc,
+        radius,
+        loc,
         vel: 0.0,
         acc: Vector2::<f32>::zeros(),
     };

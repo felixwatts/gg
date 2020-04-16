@@ -5,7 +5,7 @@ use crate::component::Keyboard;
 use recs::Ecs;
 use crate::component::Network;
 use crate::component::Anchor;
-use crate::system::system::System;
+use crate::system::System;
 use nalgebra::Vector2;
 use crate::component::Focus;
 use crate::component::body::Body;
@@ -33,7 +33,7 @@ pub struct GorillaSystem {
 pub fn spawn_gorilla(ecs: &mut recs::Ecs, loc: Vector2<f32>, color: Color, key_mapping: Option<KeyMapping>, with_focus: bool) -> GgResult<EntityId> {
     let gorilla = ecs.create_entity();
     ecs.set(gorilla, Sprite::new(color, [0.6, 0.6].into(), Vector2::new(0.0, 0.0), Vector2::new(16.0/32.0, 16.0/32.0)))?;  
-    ecs.set(gorilla, Gorilla::new(loc.clone()))?;
+    ecs.set(gorilla, Gorilla::new(loc))?;
     ecs.set(gorilla, Body::new_dynamic(loc, Vector2::zeros(), Vector2::new(0.0, -10.0)))?;
     ecs.set(gorilla, Network)?;
     ecs.set(gorilla, Latency(0.0))?;
@@ -93,8 +93,8 @@ impl GorillaSystem {
 
     fn respawn_if_outside_bounds(&mut self, entity: EntityId, state: &mut Ecs) -> GgResult {
         if state.borrow::<Body>(entity).unwrap().get_loc().y < -20.0 {
-            let spawn_location = state.borrow::<Gorilla>(entity).unwrap().spawn_location.clone();
-            state.set(entity, Body::new_dynamic(spawn_location.into(), Vector2::zeros(), Vector2::new(0.0, -10.0))).unwrap();
+            let spawn_location = state.borrow::<Gorilla>(entity).unwrap().spawn_location;
+            state.set(entity, Body::new_dynamic(spawn_location, Vector2::zeros(), Vector2::new(0.0, -10.0))).unwrap();
 
             state.borrow_mut::<Gorilla>(entity).unwrap().events.push(GorillaEvent::DetachFromAnchor());
             state.borrow_mut::<Gorilla>(entity).unwrap().events.push(GorillaEvent::Spawn());
@@ -108,7 +108,7 @@ impl GorillaSystem {
         let mut events = vec![];
         events.extend(gorilla.input_events.drain(..));
 
-        if events.len() == 0 {
+        if events.is_empty() {
             return Ok(())
         }
 
@@ -117,19 +117,19 @@ impl GorillaSystem {
         for input_event in events {
             match input_event.button {
                 Button::One =>
-                    match input_event.is_down {
-                        true => self.try_add_rope(state, entity),
-                        false => self.try_remove_rope(state, entity)
-                    }
-                ,
+                    if input_event.is_down {
+                        self.try_add_rope(state, entity)
+                    } else {
+                        self.try_remove_rope(state, entity)
+                    },
                 Button::Two => {
                     let body = state.borrow_mut::<Body>(entity)?;
-                    match input_event.is_down {
-                        true => body.set_acc(Vector2::new(0.0, -20.0)),
-                        false => body.set_acc(Vector2::new(0.0, -10.0))
+                    if input_event.is_down {
+                        body.set_acc(Vector2::new(0.0, -20.0))
+                    } else {
+                        body.set_acc(Vector2::new(0.0, -10.0))
                     }
                 }
-                
             };
         }
 
@@ -180,7 +180,7 @@ impl GorillaSystem {
             .map(|a| a.0);
 
         if let Some(anchor) = closest_anchor {
-            let anchor_loc = state.borrow::<Body>(anchor).unwrap().get_loc().clone();
+            let anchor_loc = state.borrow::<Body>(anchor).unwrap().get_loc();
             let attached_body = state.borrow::<Body>(gorilla).unwrap().to_attached(anchor_loc);
             state.set(gorilla, attached_body).unwrap();
             state.borrow_mut::<Gorilla>(gorilla).unwrap().events.push(GorillaEvent::AttachToAnchor(anchor));

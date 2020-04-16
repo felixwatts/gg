@@ -112,25 +112,25 @@ impl<TTx, TRx> RealNetwork<TTx, TRx>
 
 impl<TTx, TRx> TxChannel<TTx> for RealNetwork<TTx, TRx> {
     fn enqueue(&mut self, msg: TTx) -> GgResult{
-        match self.is_closed.load(std::sync::atomic::Ordering::Relaxed) {
-            true => Err("channel closed".into()),
-            false => {
-                self.tx_q_out.as_ref().unwrap().send(msg)?;
-                Ok(())
-            }
+        let is_closed = self.is_closed.load(std::sync::atomic::Ordering::Relaxed);
+        if is_closed {
+            Err("channel closed".into())
+        } else {
+            self.tx_q_out.as_ref().unwrap().send(msg)?;
+            Ok(())
         }
     }
 }
 
 impl<TTx, TRx> RxChannel<TRx> for RealNetwork<TTx, TRx> {
     fn dequeue(&mut self, buffer: &mut Vec::<TRx>) -> GgResult{
-        match self.is_closed.load(std::sync::atomic::Ordering::Relaxed) {
-            true => Err("channel closed".into()),
-            false => {
-                buffer.clear();
-                buffer.extend(self.rx_q_in.as_ref().unwrap().try_iter());
-                Ok(())
-            }
+        let is_closed = self.is_closed.load(std::sync::atomic::Ordering::Relaxed);
+        if is_closed {
+            Err("channel closed".into())
+        } else {
+            buffer.clear();
+            buffer.extend(self.rx_q_in.as_ref().unwrap().try_iter());
+            Ok(())
         }
     }
 }

@@ -3,7 +3,7 @@ use recs::Ecs;
 use crate::component::body::Body;
 use recs::EntityId;
 use crate::err::GgResult;
-use crate::system::system::System;
+use crate::system::System;
 use crate::component::sprite::Sprite;
 
 pub struct PhysicsSystem {
@@ -23,7 +23,7 @@ impl<TContext> System<TContext> for PhysicsSystem where TContext: TimerService {
             let t_delta = context.average_delta().as_secs_f32();
             body.step(t_delta);
 
-            let loc = body.get_loc().clone();
+            let loc = body.get_loc();
 
             // update sprite
             if let Ok(sprite) = state.borrow_mut::<Sprite>(entity) {

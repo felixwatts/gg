@@ -4,16 +4,17 @@ use std::time::Duration;
 use crate::context::TimerService;
 use crate::context::server::timer::TimeContext;
 
+#[derive(Default)]
 pub struct ServerContext{
     timer: TimeContext
 }
 
 impl ServerContext{
-    pub fn new() -> ServerContext {
-        ServerContext{
-            timer: TimeContext::new()
-        }
-    }
+    // pub fn new() -> ServerContext {
+    //     ServerContext{
+    //         timer: TimeContext::new()
+    //     }
+    // }
 
     pub fn step(&mut self){
         self.timer.tick();
